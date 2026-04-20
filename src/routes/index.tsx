@@ -1,26 +1,47 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Navbar } from "@/components/Navbar";
+import { Hero } from "@/components/Hero";
+import { Menu } from "@/components/Menu";
+import { Deals } from "@/components/Deals";
+import { Gallery } from "@/components/Gallery";
+import { FindUs } from "@/components/FindUs";
+import { Footer } from "@/components/Footer";
+import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Munchiz — Munch Together, Laugh Forever | Kamulu, Nairobi" },
+      {
+        name: "description",
+        content:
+          "Munchiz: bold burgers, cheesy pizzas, crispy chicken & cold drinks in Kamulu, Kangundo Road. Order on WhatsApp 0728466665.",
+      },
+      { property: "og:title", content: "Munchiz — Kamulu's Loudest Plate" },
+      {
+        property: "og:description",
+        content:
+          "Burgers that hit. Pizzas that pull cheese. Wings that slap. Order via WhatsApp.",
+      },
+      { property: "og:type", content: "website" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}
-
 function Index() {
-  return <PlaceholderIndex />;
+  return (
+    <>
+      <Navbar />
+      <main>
+        <Hero />
+        <Menu />
+        <Deals />
+        <Gallery />
+        <FindUs />
+      </main>
+      <Footer />
+      <FloatingWhatsApp />
+    </>
+  );
 }
