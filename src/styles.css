@@ -124,6 +124,15 @@
     scroll-behavior: smooth;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+
+  section[id] {
+    scroll-margin-top: 80px;
+  }
+
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
