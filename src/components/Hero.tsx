@@ -14,8 +14,13 @@ export function Hero() {
           alt="Juicy Munchiz burger with melted cheese and fresh toppings"
           width={1536}
           height={1024}
+          loading="eager"
+          // @ts-expect-error fetchpriority is valid HTML but not yet typed on React
+          fetchpriority="high"
+          decoding="async"
           className="w-full h-full object-cover opacity-50 md:opacity-60"
         />
+
         <div className="absolute inset-0 bg-gradient-to-r from-secondary via-secondary/80 to-secondary/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-secondary via-transparent to-transparent" />
       </div>
