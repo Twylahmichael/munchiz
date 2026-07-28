@@ -61,11 +61,17 @@ const items: Item[] = [
   },
 ];
 
+const CATEGORIES = ["All", "Burgers", "Pizza", "Fries", "Chicken", "Drinks"] as const;
+type Category = (typeof CATEGORIES)[number];
+
 export function Menu() {
+  const [active, setActive] = useState<Category>("All");
+  const filtered = active === "All" ? items : items.filter((i) => i.tag === active);
+
   return (
-    <section id="menu" className="py-20 sm:py-28 bg-background relative">
+    <section id="menu" className="py-20 sm:py-28 bg-background relative scroll-mt-20">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center mb-14">
+        <div className="text-center mb-10">
           <span className="inline-block bg-primary/10 text-primary font-bold uppercase tracking-widest text-xs px-4 py-2 rounded-full mb-4">
             🔥 The Menu
           </span>
@@ -77,8 +83,34 @@ export function Menu() {
           </p>
         </div>
 
+        <div
+          role="tablist"
+          aria-label="Menu categories"
+          className="flex gap-2 sm:gap-3 overflow-x-auto pb-3 mb-8 -mx-4 px-4 sm:justify-center sm:flex-wrap sm:overflow-visible sm:mx-0 sm:px-0 scrollbar-none"
+        >
+          {CATEGORIES.map((cat) => {
+            const isActive = cat === active;
+            return (
+              <button
+                key={cat}
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActive(cat)}
+                className={`shrink-0 px-4 py-2 rounded-full font-bold uppercase tracking-wide text-xs sm:text-sm border-2 transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary shadow-card-warm"
+                    : "bg-transparent text-secondary border-border hover:border-primary hover:text-primary"
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {items.map((item) => (
+          {filtered.map((item) => (
+
             <article
               key={item.name}
               className="group bg-card rounded-3xl overflow-hidden shadow-card-warm hover:shadow-deal hover:-translate-y-2 transition-all duration-300 border border-border"
