@@ -6,7 +6,7 @@ export function FloatingWhatsApp() {
       href={buildWhatsAppUrl()}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Order on WhatsApp"
+      aria-label="Chat with us on WhatsApp"
       className="fixed bottom-5 right-5 z-50 bg-whatsapp text-whatsapp-foreground w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-deal animate-pulse-glow hover:scale-110 transition-transform"
     >
       <svg viewBox="0 0 24 24" className="w-7 h-7 sm:w-8 sm:h-8 fill-current" aria-hidden>

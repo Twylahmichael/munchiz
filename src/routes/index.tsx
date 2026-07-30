@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CartProvider } from "@/lib/cart";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { Menu } from "@/components/Menu";
@@ -7,15 +8,15 @@ import { Gallery } from "@/components/Gallery";
 import { FindUs } from "@/components/FindUs";
 import { Footer } from "@/components/Footer";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { CartDrawer } from "@/components/CartDrawer";
 
 export const Route = createFileRoute("/")({
   head: () => {
     const title = "Munchiz — Munch Together, Laugh Forever | Kamulu, Nairobi";
     const description =
       "Bold burgers, cheesy pizzas, crispy chicken & cold drinks in Kamulu, Kangundo Rd. Order on WhatsApp 0728466665 — fast delivery & pickup.";
-    const image =
-      "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6df8b30-17d4-4ebe-b43d-448d91d7b7b8/id-preview-0c9e1562--cb63cdf2-72d3-4c6e-9466-fbf3ba7ad859.lovable.app-1776652272170.png";
-    const url = "https://munchiz.lovable.app/";
+    const image = "/og-image.png";
+    const url = "https://munchiz.co.ke/";
     return {
       meta: [
         { title },
@@ -43,8 +44,8 @@ export const Route = createFileRoute("/")({
             "@context": "https://schema.org",
             "@type": "Restaurant",
             name: "Munchiz",
-            image,
-            url,
+            image: "https://munchiz.co.ke/og-image.png",
+            url: "https://munchiz.co.ke/",
             telephone: "+254728466665",
             servesCuisine: ["Fast Food", "Burgers", "Pizza", "Chicken"],
             priceRange: "KES 150–1200",
@@ -66,7 +67,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <>
+    <CartProvider>
       <Navbar />
       <main>
         <Hero />
@@ -77,6 +78,7 @@ function Index() {
       </main>
       <Footer />
       <FloatingWhatsApp />
-    </>
+      <CartDrawer />
+    </CartProvider>
   );
 }

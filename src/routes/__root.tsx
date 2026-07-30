@@ -1,6 +1,16 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import appCss from "../styles.css?url";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60,
+      retry: 1,
+    },
+  },
+});
 
 function NotFoundComponent() {
   return (
@@ -31,18 +41,17 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "MUNCHIZ" },
       { name: "description", content: "Munchiz Magic is a vibrant, mobile-first website for a bold fast food restaurant." },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Munchiz" },
       { property: "og:title", content: "MUNCHIZ" },
       { property: "og:description", content: "Munchiz Magic is a vibrant, mobile-first website for a bold fast food restaurant." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@Munchiz" },
       { name: "twitter:title", content: "MUNCHIZ" },
       { name: "twitter:description", content: "Munchiz Magic is a vibrant, mobile-first website for a bold fast food restaurant." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6df8b30-17d4-4ebe-b43d-448d91d7b7b8/id-preview-0c9e1562--cb63cdf2-72d3-4c6e-9466-fbf3ba7ad859.lovable.app-1776652272170.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a6df8b30-17d4-4ebe-b43d-448d91d7b7b8/id-preview-0c9e1562--cb63cdf2-72d3-4c6e-9466-fbf3ba7ad859.lovable.app-1776652272170.png" },
     ],
     links: [
+      { rel: "icon", href: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍔</text></svg>" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -75,5 +84,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+    </QueryClientProvider>
+  );
 }

@@ -36,7 +36,7 @@ export function Footer() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-whatsapp text-whatsapp-foreground px-5 py-3 rounded-full font-bold uppercase text-sm tracking-wide hover:scale-[1.02] transition-transform"
               >
-                Order on WhatsApp
+                Chat on WhatsApp
               </a>
               <a
                 href="https://www.tiktok.com/@munchiz1"
@@ -57,8 +57,8 @@ export function Footer() {
         </div>
 
         <div className="border-t border-primary-foreground/10 pt-6 flex flex-col sm:flex-row gap-3 justify-between items-center text-primary-foreground/60 text-sm">
-          <p>© {new Date().getFullYear()} Munchiz. All rights reserved.</p>
-          <p>Kamulu, Kangundo Road · Nairobi</p>
+          <p>&copy; {new Date().getFullYear()} Munchiz. All rights reserved.</p>
+          <p>Kamulu, Kangundo Road &middot; Nairobi</p>
         </div>
       </div>
     </footer>
