@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export const Route = createFileRoute("/sign-up")({
   component: SignUp,
@@ -109,9 +110,8 @@ function SignUp() {
             <label htmlFor="signup-password" className="block text-sm font-semibold text-secondary mb-1">
               Password
             </label>
-            <input
+            <PasswordInput
               id="signup-password"
-              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -122,9 +122,8 @@ function SignUp() {
             <label htmlFor="signup-confirm" className="block text-sm font-semibold text-secondary mb-1">
               Confirm Password
             </label>
-            <input
+            <PasswordInput
               id="signup-confirm"
-              type="password"
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

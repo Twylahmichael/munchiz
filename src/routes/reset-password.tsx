@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export const Route = createFileRoute("/reset-password")({ component: ResetPasswordPage });
 
@@ -62,8 +63,7 @@ function ResetPasswordPage() {
           <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-8 shadow-sm border border-border space-y-4">
             <div>
               <label className="block text-sm font-semibold mb-1">New Password</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -74,8 +74,7 @@ function ResetPasswordPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold mb-1">Confirm Password</label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required

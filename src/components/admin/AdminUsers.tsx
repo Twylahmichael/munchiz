@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Shield, ShieldOff, UserPlus, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Profile } from "@/lib/database.types";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export function AdminUsers() {
   const queryClient = useQueryClient();
@@ -176,8 +177,9 @@ function CreateAdminForm({ onClose, onCreated }: { onClose: () => void; onCreate
         </div>
         <div>
           <label className="block text-xs text-white/40 mb-1">Temp Password *</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6}
-            className="w-full px-3 py-2 rounded-lg bg-[#1a1714] border border-white/10 text-white text-sm" />
+          <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6}
+            className="w-full px-3 py-2 rounded-lg bg-[#1a1714] border border-white/10 text-white text-sm"
+            toggleClassName="text-white/40 hover:text-white" />
         </div>
         {error && <div className="md:col-span-3 bg-red-500/20 text-red-400 text-sm p-3 rounded-lg">{error}</div>}
         <div className="md:col-span-3">
