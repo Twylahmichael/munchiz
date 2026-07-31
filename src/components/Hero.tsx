@@ -30,7 +30,7 @@ export function Hero() {
           <div className="inline-flex items-center gap-2 bg-accent/20 border border-accent/40 backdrop-blur-sm px-4 py-2 rounded-full mb-6 animate-float-up">
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
             <span className="text-accent font-bold uppercase text-xs tracking-widest">
-              Now Open &bull; Kamulu, Kangundo Rd
+              Open Daily 9am–9pm &bull; Kanisani Rd, Nairobi
             </span>
           </div>
 
@@ -38,11 +38,11 @@ export function Hero() {
             className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-display text-primary-foreground leading-[0.9] mb-6 animate-float-up"
             style={{ animationDelay: "0.1s" }}
           >
-            Munch
+            Bites
             <br />
-            <span className="text-accent">Together,</span>
+            <span className="text-accent">of</span>
             <br />
-            Laugh <span className="text-primary">Forever</span>
+            <span className="text-primary">Happiness</span>
           </h1>
 
           <p
@@ -51,7 +51,7 @@ export function Hero() {
           >
             Burgers that hit different. Pizzas that pull cheese for days. Wings that
             slap. Welcome to <span className="text-accent font-bold">Munchiz</span> —
-            Kamulu's loudest plate.
+            Nairobi's loudest plate.
           </p>
 
           <div

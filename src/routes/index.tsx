@@ -12,23 +12,23 @@ import { CartDrawer } from "@/components/CartDrawer";
 
 export const Route = createFileRoute("/")({
   head: () => {
-    const title = "Munchiz — Munch Together, Laugh Forever | Kamulu, Nairobi";
+    const title = "Munchiz — Bites of Happiness | Kanisani Rd, Nairobi";
     const description =
-      "Bold burgers, cheesy pizzas, crispy chicken & cold drinks in Kamulu, Kangundo Rd. Order on WhatsApp 0728466665 — fast delivery & pickup.";
+      "Bold burgers, cheesy pizzas, crispy chicken & cold drinks on Kanisani Road, Nairobi. Open daily 9am–9pm. Order on WhatsApp 0728466665.";
     const image = "/og-image.png";
     const url = "https://munchiz.co.ke/";
     return {
       meta: [
         { title },
         { name: "description", content: description },
-        { name: "keywords", content: "Munchiz, Kamulu food, Kangundo Road, fast food Nairobi, burgers Kamulu, pizza delivery, WhatsApp order" },
+        { name: "keywords", content: "Munchiz, Nairobi food, Kanisani Road, fast food Nairobi, burgers, pizza delivery, WhatsApp order, bites of happiness" },
         { name: "theme-color", content: "#c1121f" },
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
         { property: "og:image", content: image },
-        { property: "og:image:alt", content: "Munchiz — Kamulu's loudest plate" },
+        { property: "og:image:alt", content: "Munchiz — Bites of happiness" },
         { property: "og:site_name", content: "Munchiz" },
         { property: "og:locale", content: "en_KE" },
         { name: "twitter:card", content: "summary_large_image" },
@@ -48,13 +48,21 @@ export const Route = createFileRoute("/")({
             url: "https://munchiz.co.ke/",
             telephone: "+254728466665",
             servesCuisine: ["Fast Food", "Burgers", "Pizza", "Chicken"],
-            priceRange: "KES 150–1200",
+            priceRange: "KES 100–2000",
+            slogan: "Bites of Happiness",
             address: {
               "@type": "PostalAddress",
-              streetAddress: "Kanisani, off Kangundo Road",
-              addressLocality: "Kamulu",
+              streetAddress: "Kanisani Road",
+              addressLocality: "Nairobi",
+              postalCode: "63665",
               addressRegion: "Nairobi",
               addressCountry: "KE",
+            },
+            openingHoursSpecification: {
+              "@type": "OpeningHoursSpecification",
+              dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              opens: "09:00",
+              closes: "21:00",
             },
           }),
         },

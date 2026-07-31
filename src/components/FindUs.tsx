@@ -27,9 +27,9 @@ export function FindUs() {
                 <div>
                   <h3 className="text-2xl font-display text-secondary mb-1">Location</h3>
                   <p className="text-muted-foreground">
-                    Kamulu, Kanisani — off Kangundo Road
+                    Kanisani Road
                     <br />
-                    Nairobi, Kenya
+                    Nairobi 63665, Kenya
                   </p>
                 </div>
               </div>
@@ -56,9 +56,9 @@ export function FindUs() {
                 <div>
                   <h3 className="text-2xl font-display text-secondary mb-1">Open Daily</h3>
                   <p className="text-muted-foreground">
-                    10:00 AM – 11:00 PM
+                    9:00 AM – 9:00 PM
                     <br />
-                    Late night vibes on weekends
+                    Every day of the week
                   </p>
                 </div>
               </div>
@@ -77,7 +77,7 @@ export function FindUs() {
           <div className="rounded-3xl overflow-hidden shadow-card-warm border border-border min-h-[400px]">
             <iframe
               title="Munchiz location on Google Maps"
-              src="https://www.google.com/maps?q=Kamulu+Kangundo+Road+Nairobi&output=embed"
+              src="https://www.google.com/maps?q=Kanisani+Road+Nairobi&output=embed"
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "400px" }}

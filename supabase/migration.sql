@@ -193,5 +193,5 @@ on conflict (id) do nothing;
 
 -- Site Settings (single row)
 insert into public.site_settings (id, business_name, whatsapp_number, tagline, operating_hours) values
-  ('d1000000-0000-0000-0000-000000000001', 'Munchiz', '254728466665', 'Munch Together, Laugh Forever', '{"weekdays":"10:00 AM – 11:00 PM","weekends":"10:00 AM – 12:00 AM","note":"Late night vibes on weekends"}')
+  ('d1000000-0000-0000-0000-000000000001', 'Munchiz', '254728466665', 'Bites of Happiness', '{"weekdays":"9:00 AM – 9:00 PM","weekends":"9:00 AM – 9:00 PM","note":"Open every day"}')
 on conflict (id) do nothing;

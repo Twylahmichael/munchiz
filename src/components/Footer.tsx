@@ -13,7 +13,7 @@ export function Footer() {
               <span className="text-2xl">🍔</span>
             </div>
             <p className="text-primary-foreground/70 max-w-xs">
-              Munch Together, Laugh Forever. Kamulu's loudest fast food spot.
+              Bites of happiness. Nairobi's loudest fast food spot.
             </p>
           </div>
 
@@ -58,7 +58,7 @@ export function Footer() {
 
         <div className="border-t border-primary-foreground/10 pt-6 flex flex-col sm:flex-row gap-3 justify-between items-center text-primary-foreground/60 text-sm">
           <p>&copy; {new Date().getFullYear()} Munchiz. All rights reserved.</p>
-          <p>Kamulu, Kangundo Road &middot; Nairobi</p>
+          <p>Kanisani Road &middot; Nairobi 63665 &middot; Open 9am–9pm</p>
         </div>
       </div>
     </footer>
