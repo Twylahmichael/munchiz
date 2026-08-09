@@ -8,6 +8,13 @@ export interface DrinkAddOn {
   quantity: number;
 }
 
+export interface ExtraAddOn {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -16,6 +23,7 @@ export interface CartItem {
   photo_url: string | null;
   tomatoSachets: number;
   drinkAddOns: DrinkAddOn[];
+  extraAddOns: ExtraAddOn[];
 }
 
 interface CartContextValue {
@@ -27,11 +35,15 @@ interface CartContextValue {
   addDrinkToItem: (itemId: string, drink: MenuItem) => void;
   updateDrinkQuantityOnItem: (itemId: string, drinkId: string, quantity: number) => void;
   removeDrinkFromItem: (itemId: string, drinkId: string) => void;
+  addExtraToItem: (itemId: string, extra: MenuItem) => void;
+  updateExtraQuantityOnItem: (itemId: string, extraId: string, quantity: number) => void;
+  removeExtraFromItem: (itemId: string, extraId: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalTomatoSachets: number;
   tomatoTotal: number;
   drinksTotal: number;
+  extrasTotal: number;
   totalAmount: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
@@ -44,6 +56,10 @@ function drinksSubtotal(addOns: DrinkAddOn[] | undefined): number {
   return (addOns || []).reduce((s, d) => s + d.price * d.quantity, 0);
 }
 
+function extrasSubtotal(addOns: ExtraAddOn[] | undefined): number {
+  return (addOns || []).reduce((s, e) => s + e.price * e.quantity, 0);
+}
+
 function loadCart(): CartItem[] {
   try {
     const raw = localStorage.getItem(CART_KEY);
@@ -52,6 +68,7 @@ function loadCart(): CartItem[] {
       ...i,
       tomatoSachets: i.tomatoSachets ?? 0,
       drinkAddOns: Array.isArray(i.drinkAddOns) ? i.drinkAddOns : [],
+      extraAddOns: Array.isArray(i.extraAddOns) ? i.extraAddOns : [],
     }));
   } catch {
     return [];
@@ -90,6 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           photo_url: menuItem.photo_url,
           tomatoSachets: 0,
           drinkAddOns: [],
+          extraAddOns: [],
         },
       ];
     });
@@ -169,6 +187,58 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const addExtraToItem = useCallback((itemId: string, extra: MenuItem) => {
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== itemId) return i;
+        const existing = i.extraAddOns.find((e) => e.id === extra.id);
+        if (existing) {
+          return {
+            ...i,
+            extraAddOns: i.extraAddOns.map((e) =>
+              e.id === extra.id ? { ...e, quantity: e.quantity + 1 } : e
+            ),
+          };
+        }
+        return {
+          ...i,
+          extraAddOns: [
+            ...i.extraAddOns,
+            { id: extra.id, name: extra.name, price: extra.price, quantity: 1 },
+          ],
+        };
+      })
+    );
+  }, []);
+
+  const updateExtraQuantityOnItem = useCallback((itemId: string, extraId: string, quantity: number) => {
+    const safe = Math.max(0, Math.min(99, Math.floor(quantity)));
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== itemId) return i;
+        if (safe === 0) {
+          return { ...i, extraAddOns: i.extraAddOns.filter((e) => e.id !== extraId) };
+        }
+        return {
+          ...i,
+          extraAddOns: i.extraAddOns.map((e) =>
+            e.id === extraId ? { ...e, quantity: safe } : e
+          ),
+        };
+      })
+    );
+  }, []);
+
+  const removeExtraFromItem = useCallback((itemId: string, extraId: string) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, extraAddOns: i.extraAddOns.filter((e) => e.id !== extraId) }
+          : i
+      )
+    );
+  }, []);
+
   const clearCart = useCallback(() => {
     setItems([]);
   }, []);
@@ -177,8 +247,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalTomatoSachets = items.reduce((sum, i) => sum + (i.tomatoSachets || 0), 0);
   const tomatoTotal = totalTomatoSachets * TOMATO_PASTE_UNIT_PRICE;
   const drinksTotal = items.reduce((sum, i) => sum + drinksSubtotal(i.drinkAddOns), 0);
+  const extrasTotal = items.reduce((sum, i) => sum + extrasSubtotal(i.extraAddOns), 0);
   const totalAmount =
-    items.reduce((sum, i) => sum + i.price * i.quantity, 0) + tomatoTotal + drinksTotal;
+    items.reduce((sum, i) => sum + i.price * i.quantity, 0) + tomatoTotal + drinksTotal + extrasTotal;
 
   return (
     <CartContext value={{
@@ -190,11 +261,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addDrinkToItem,
       updateDrinkQuantityOnItem,
       removeDrinkFromItem,
+      addExtraToItem,
+      updateExtraQuantityOnItem,
+      removeExtraFromItem,
       clearCart,
       totalItems,
       totalTomatoSachets,
       tomatoTotal,
       drinksTotal,
+      extrasTotal,
       totalAmount,
       isOpen,
       setIsOpen,
@@ -212,4 +287,8 @@ export function useCart() {
 
 export function itemDrinksSubtotal(item: Pick<CartItem, "drinkAddOns">): number {
   return drinksSubtotal(item.drinkAddOns);
+}
+
+export function itemExtrasSubtotal(item: Pick<CartItem, "extraAddOns">): number {
+  return extrasSubtotal(item.extraAddOns);
 }

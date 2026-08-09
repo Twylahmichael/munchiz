@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
-import { useCart, TOMATO_PASTE_UNIT_PRICE, itemDrinksSubtotal } from "@/lib/cart";
+import { useCart, TOMATO_PASTE_UNIT_PRICE, itemDrinksSubtotal, itemExtrasSubtotal } from "@/lib/cart";
 import { useCategories, useMenuItems } from "@/hooks/use-menu";
 import type { MenuItem } from "@/lib/database.types";
 import { CheckoutForm } from "./CheckoutForm";
@@ -14,11 +14,15 @@ export function CartDrawer() {
     addDrinkToItem,
     updateDrinkQuantityOnItem,
     removeDrinkFromItem,
+    addExtraToItem,
+    updateExtraQuantityOnItem,
+    removeExtraFromItem,
     clearCart,
     totalItems,
     totalTomatoSachets,
     tomatoTotal,
     drinksTotal,
+    extrasTotal,
     totalAmount,
     isOpen,
     setIsOpen,
@@ -33,6 +37,14 @@ export function CartDrawer() {
     if (!drinksCat || !menuItems) return [];
     return menuItems
       .filter((m) => m.category_id === drinksCat.id && m.is_available)
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [categories, menuItems]);
+
+  const extraOptions = useMemo<MenuItem[]>(() => {
+    const extrasCat = categories?.find((c) => c.slug === "extras");
+    if (!extrasCat || !menuItems) return [];
+    return menuItems
+      .filter((m) => m.category_id === extrasCat.id && m.is_available)
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [categories, menuItems]);
 
@@ -87,11 +99,14 @@ export function CartDrawer() {
               ) : (
                 items.map((item) => {
                   const drinkSub = itemDrinksSubtotal(item);
+                  const extraSub = itemExtrasSubtotal(item);
                   const lineTotal =
                     item.price * item.quantity +
                     (item.tomatoSachets || 0) * TOMATO_PASTE_UNIT_PRICE +
-                    drinkSub;
+                    drinkSub +
+                    extraSub;
                   const alreadyPickedIds = new Set(item.drinkAddOns.map((d) => d.id));
+                  const alreadyPickedExtraIds = new Set(item.extraAddOns.map((e) => e.id));
                   return (
                     <div
                       key={item.id}
@@ -222,6 +237,67 @@ export function CartDrawer() {
                             </select>
                           </div>
                         )}
+
+                        {item.extraAddOns.length > 0 && (
+                          <ul className="mt-2 space-y-1">
+                            {item.extraAddOns.map((ex) => (
+                              <li key={ex.id} className="flex items-center gap-2">
+                                <span className="text-[11px] text-muted-foreground flex-1 truncate">
+                                  ➕ {ex.name}
+                                  <span className="text-muted-foreground/70"> (+KES {ex.price})</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateExtraQuantityOnItem(item.id, ex.id, ex.quantity - 1)}
+                                  className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+                                  aria-label={`Fewer ${ex.name}`}
+                                >
+                                  <Minus size={12} />
+                                </button>
+                                <span className="text-xs font-bold w-5 text-center">{ex.quantity}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateExtraQuantityOnItem(item.id, ex.id, ex.quantity + 1)}
+                                  className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+                                  aria-label={`More ${ex.name}`}
+                                >
+                                  <Plus size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => removeExtraFromItem(item.id, ex.id)}
+                                  className="p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                                  aria-label={`Remove ${ex.name}`}
+                                >
+                                  <X size={12} />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        {extraOptions.length > 0 && (
+                          <div className="mt-2">
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                const extra = extraOptions.find((x) => x.id === e.target.value);
+                                if (extra) addExtraToItem(item.id, extra);
+                                e.target.value = "";
+                              }}
+                              className="w-full text-[11px] px-2 py-1 rounded-lg bg-muted border border-border text-secondary focus:outline-none focus:ring-1 focus:ring-primary"
+                              aria-label="Add an extra to this meal"
+                            >
+                              <option value="">➕ Add an extra…</option>
+                              {extraOptions.map((x) => (
+                                <option key={x.id} value={x.id} disabled={alreadyPickedExtraIds.has(x.id)}>
+                                  {x.name} — KES {x.price}
+                                  {alreadyPickedExtraIds.has(x.id) ? " (added)" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => removeItem(item.id)}
@@ -248,6 +324,12 @@ export function CartDrawer() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>🥤 Drink add-ons</span>
                     <span>KES {drinksTotal}</span>
+                  </div>
+                )}
+                {extrasTotal > 0 && (
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>➕ Extra toppings</span>
+                    <span>KES {extrasTotal}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between text-lg font-bold">

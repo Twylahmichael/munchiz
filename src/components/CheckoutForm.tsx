@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, Tag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useCart, TOMATO_PASTE_UNIT_PRICE, itemDrinksSubtotal } from "@/lib/cart";
+import { useCart, TOMATO_PASTE_UNIT_PRICE, itemDrinksSubtotal, itemExtrasSubtotal } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import type { Zone, Promo } from "@/lib/database.types";
@@ -24,7 +24,7 @@ function formatPhone(phone: string): string {
 }
 
 export function CheckoutForm({ onBack }: { onBack: () => void }) {
-  const { items, totalAmount, totalTomatoSachets, tomatoTotal, drinksTotal, clearCart, setIsOpen } = useCart();
+  const { items, totalAmount, totalTomatoSachets, tomatoTotal, drinksTotal, extrasTotal, clearCart, setIsOpen } = useCart();
   const { user, profile } = useAuth();
 
   const [name, setName] = useState("");
@@ -144,8 +144,9 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
         <p className="text-muted-foreground text-sm mb-6">
           Create an account or sign in to place your order.
         </p>
+        
         <a
-          href={`/sign-in?returnTo=/`}
+          href={"/sign-in?returnTo=/"}
           className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold uppercase tracking-wide hover:bg-secondary transition-colors"
         >
           Sign In
@@ -197,6 +198,14 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
           subtotal: d.price * d.quantity,
         })),
         drinks_subtotal: itemDrinksSubtotal(i),
+        extra_add_ons: i.extraAddOns.map((ex) => ({
+          id: ex.id,
+          name: ex.name,
+          quantity: ex.quantity,
+          unit_price: ex.price,
+          subtotal: ex.price * ex.quantity,
+        })),
+        extras_subtotal: itemExtrasSubtotal(i),
       }));
 
       const { data: order, error: orderError } = await supabase
@@ -241,7 +250,15 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
           unit_price: d.price,
           subtotal: d.price * d.quantity,
         }));
-        return [mealRow, ...drinkRows];
+        const extraRows = i.extraAddOns.map((ex) => ({
+          order_id: order.id,
+          menu_item_id: ex.id,
+          item_name: `${ex.name} (with ${i.name})`,
+          quantity: ex.quantity,
+          unit_price: ex.price,
+          subtotal: ex.price * ex.quantity,
+        }));
+        return [mealRow, ...drinkRows, ...extraRows];
       });
 
       await supabase.from("order_items").insert(orderItems);
@@ -326,6 +343,12 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
                 <span>KES {(d.price * d.quantity).toLocaleString()}</span>
               </div>
             ))}
+            {item.extraAddOns.map((ex) => (
+              <div key={ex.id} className="flex justify-between text-xs text-muted-foreground pl-4">
+                <span>+ ➕ {ex.quantity}x {ex.name}</span>
+                <span>KES {(ex.price * ex.quantity).toLocaleString()}</span>
+              </div>
+            ))}
           </div>
         ))}
         <div className="border-t border-border pt-2 space-y-1">
@@ -339,6 +362,12 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>Drink add-ons</span>
               <span>KES {drinksTotal.toLocaleString()}</span>
+            </div>
+          )}
+          {extrasTotal > 0 && (
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Extra toppings</span>
+              <span>KES {extrasTotal.toLocaleString()}</span>
             </div>
           )}
           <div className="flex justify-between text-sm">
