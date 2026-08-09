@@ -7,7 +7,6 @@ import { Deals } from "@/components/Deals";
 import { Gallery } from "@/components/Gallery";
 import { FindUs } from "@/components/FindUs";
 import { Footer } from "@/components/Footer";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { CartDrawer } from "@/components/CartDrawer";
 
 export const Route = createFileRoute("/")({
@@ -85,7 +84,6 @@ function Index() {
         <FindUs />
       </main>
       <Footer />
-      <FloatingWhatsApp />
       <CartDrawer />
     </CartProvider>
   );

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon, Link2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface ImageUploadProps {
@@ -15,6 +15,8 @@ export function ImageUpload({ bucket, currentUrl, onUpload, onRemove, folder = "
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<"upload" | "url">("upload");
+  const [urlValue, setUrlValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
@@ -53,6 +55,28 @@ export function ImageUpload({ bucket, currentUrl, onUpload, onRemove, folder = "
     }
   }
 
+  function handleUrlSubmit() {
+    setError(null);
+    const trimmed = urlValue.trim();
+    if (!trimmed) {
+      setError("Paste an image URL.");
+      return;
+    }
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        setError("URL must start with http:// or https://");
+        return;
+      }
+    } catch {
+      setError("That does not look like a valid URL.");
+      return;
+    }
+    setPreview(trimmed);
+    onUpload(trimmed);
+    setUrlValue("");
+  }
+
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragActive(false);
@@ -70,6 +94,7 @@ export function ImageUpload({ bucket, currentUrl, onUpload, onRemove, folder = "
             src={displayUrl}
             alt="Upload preview"
             className="w-32 h-32 object-cover rounded-xl border border-white/10"
+            onError={() => setError("Could not load image at that URL.")}
           />
           {onRemove && (
             <button
@@ -82,30 +107,79 @@ export function ImageUpload({ bucket, currentUrl, onUpload, onRemove, folder = "
           )}
         </div>
       ) : (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-          onDragLeave={() => setDragActive(false)}
-          onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-            dragActive ? "border-amber-500 bg-amber-500/5" : "border-white/10 hover:border-amber-500/50"
-          }`}
-        >
-          {uploading ? (
-            <div className="text-white/40">
-              <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2" />
-              Uploading...
+        <>
+          <div className="flex gap-1 mb-2">
+            <button
+              type="button"
+              onClick={() => { setMode("upload"); setError(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                mode === "upload" ? "bg-amber-500 text-black" : "bg-white/5 text-white/60 hover:text-white"
+              }`}
+            >
+              Upload file
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode("url"); setError(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                mode === "url" ? "bg-amber-500 text-black" : "bg-white/5 text-white/60 hover:text-white"
+              }`}
+            >
+              Paste URL
+            </button>
+          </div>
+
+          {mode === "upload" ? (
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleDrop}
+              onClick={() => inputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                dragActive ? "border-amber-500 bg-amber-500/5" : "border-white/10 hover:border-amber-500/50"
+              }`}
+            >
+              {uploading ? (
+                <div className="text-white/40">
+                  <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2" />
+                  Uploading...
+                </div>
+              ) : (
+                <>
+                  <ImageIcon size={32} className="mx-auto mb-2 text-white/20" />
+                  <p className="text-sm text-white/40">
+                    <span className="font-semibold text-amber-400">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-white/20 mt-1">JPEG, PNG, WebP (max 5MB)</p>
+                </>
+              )}
             </div>
           ) : (
-            <>
-              <ImageIcon size={32} className="mx-auto mb-2 text-white/20" />
-              <p className="text-sm text-white/40">
-                <span className="font-semibold text-amber-400">Click to upload</span> or drag and drop
-              </p>
-              <p className="text-xs text-white/20 mt-1">JPEG, PNG, WebP (max 5MB)</p>
-            </>
+            <div className="border-2 border-dashed border-white/10 rounded-xl p-4">
+              <div className="flex items-center gap-2 text-white/40 mb-2">
+                <Link2 size={16} />
+                <span className="text-xs">Paste a direct image URL (jpg, png, webp)</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleUrlSubmit(); } }}
+                  placeholder="https://example.com/photo.jpg"
+                  className="flex-1 px-3 py-2 rounded-lg bg-[#1a1714] border border-white/10 text-white text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleUrlSubmit}
+                  className="bg-amber-500 text-black px-4 py-2 rounded-lg font-bold text-sm hover:bg-amber-400 transition-colors"
+                >
+                  Use
+                </button>
+              </div>
+            </div>
           )}
-        </div>
+        </>
       )}
       <input
         ref={inputRef}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, Tag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useCart } from "@/lib/cart";
+import { useCart, TOMATO_PASTE_UNIT_PRICE, itemDrinksSubtotal } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import type { Zone, Promo } from "@/lib/database.types";
@@ -24,7 +24,7 @@ function formatPhone(phone: string): string {
 }
 
 export function CheckoutForm({ onBack }: { onBack: () => void }) {
-  const { items, totalAmount, clearCart, setIsOpen } = useCart();
+  const { items, totalAmount, totalTomatoSachets, tomatoTotal, drinksTotal, clearCart, setIsOpen } = useCart();
   const { user, profile } = useAuth();
 
   const [name, setName] = useState("");
@@ -39,6 +39,7 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [orderRef, setOrderRef] = useState<string | null>(null);
+  const [mpesaPromptSent, setMpesaPromptSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { data: zones } = useQuery({
@@ -103,6 +104,7 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
   }
 
   if (orderRef) {
+    const smsPhone = phone ? formatPhone(sanitize(phone)) : "";
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
         <CheckCircle size={64} className="text-whatsapp mb-4" />
@@ -111,8 +113,19 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
         <p className="text-2xl font-bold text-primary mb-4">
           #{orderRef.slice(0, 8).toUpperCase()}
         </p>
+        {paymentMethod === "mpesa" && mpesaPromptSent && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mb-4 text-sm text-green-700">
+            <p className="font-semibold mb-1">📱 M-Pesa prompt sent</p>
+            <p>
+              Check <span className="font-semibold">{smsPhone || "your phone"}</span> for the Safaricom PIN
+              prompt and enter your M-Pesa PIN to pay KES {grandTotal.toLocaleString()}.
+            </p>
+          </div>
+        )}
         <p className="text-muted-foreground text-sm mb-6">
-          We'll confirm your order shortly. Track it in My Orders.
+          {smsPhone
+            ? <>A confirmation SMS is on its way to <span className="font-semibold text-secondary">{smsPhone}</span>. Track your order in My Orders.</>
+            : <>We'll confirm your order shortly. Track it in My Orders.</>}
         </p>
         <button
           onClick={() => { clearCart(); setIsOpen(false); }}
@@ -174,6 +187,16 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
         quantity: i.quantity,
         unit_price: i.price,
         subtotal: i.price * i.quantity,
+        tomato_sachets: i.tomatoSachets || 0,
+        tomato_subtotal: (i.tomatoSachets || 0) * TOMATO_PASTE_UNIT_PRICE,
+        drink_add_ons: i.drinkAddOns.map((d) => ({
+          id: d.id,
+          name: d.name,
+          quantity: d.quantity,
+          unit_price: d.price,
+          subtotal: d.price * d.quantity,
+        })),
+        drinks_subtotal: itemDrinksSubtotal(i),
       }));
 
       const { data: order, error: orderError } = await supabase
@@ -198,14 +221,28 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
 
       if (orderError) throw orderError;
 
-      const orderItems = items.map((i) => ({
-        order_id: order.id,
-        menu_item_id: i.id,
-        item_name: i.name,
-        quantity: i.quantity,
-        unit_price: i.price,
-        subtotal: i.price * i.quantity,
-      }));
+      const orderItems = items.flatMap((i) => {
+        const tomatoNote = (i.tomatoSachets || 0) > 0
+          ? ` (+${i.tomatoSachets} tomato sachet${i.tomatoSachets === 1 ? "" : "s"})`
+          : "";
+        const mealRow = {
+          order_id: order.id,
+          menu_item_id: i.id,
+          item_name: i.name + tomatoNote,
+          quantity: i.quantity,
+          unit_price: i.price,
+          subtotal: i.price * i.quantity + (i.tomatoSachets || 0) * TOMATO_PASTE_UNIT_PRICE,
+        };
+        const drinkRows = i.drinkAddOns.map((d) => ({
+          order_id: order.id,
+          menu_item_id: d.id,
+          item_name: `${d.name} (with ${i.name})`,
+          quantity: d.quantity,
+          unit_price: d.price,
+          subtotal: d.price * d.quantity,
+        }));
+        return [mealRow, ...drinkRows];
+      });
 
       await supabase.from("order_items").insert(orderItems);
 
@@ -214,6 +251,40 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
           .from("promos")
           .update({ times_used: appliedPromo.times_used + 1 })
           .eq("id", appliedPromo.id);
+      }
+
+      try {
+        await supabase.functions.invoke("send-order-sms", {
+          body: {
+            order_id: order.id,
+            customer_name: cleanName,
+            customer_phone: formatPhone(cleanPhone),
+            order_type: orderType,
+            items: itemsSummary,
+            total_amount: grandTotal,
+          },
+        });
+      } catch (smsErr) {
+        console.warn("Order confirmation SMS failed:", smsErr);
+      }
+
+      if (paymentMethod === "mpesa") {
+        try {
+          const { data: stkData, error: stkError } = await supabase.functions.invoke(
+            "initiate-mpesa-stk-push",
+            {
+              body: {
+                order_id: order.id,
+                phone: formatPhone(cleanPhone),
+                amount: grandTotal,
+              },
+            }
+          );
+          if (stkError) throw stkError;
+          if (stkData?.ok) setMpesaPromptSent(true);
+        } catch (mpesaErr) {
+          console.warn("M-Pesa STK push failed:", mpesaErr);
+        }
       }
 
       setOrderRef(order.id);
@@ -238,12 +309,38 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
       <div className="bg-background rounded-2xl p-4 border border-border space-y-3">
         <h3 className="font-display text-xl text-secondary">Order Summary</h3>
         {items.map((item) => (
-          <div key={item.id} className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
-            <span className="font-semibold">KES {(item.price * item.quantity).toLocaleString()}</span>
+          <div key={item.id} className="text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
+              <span className="font-semibold">KES {(item.price * item.quantity).toLocaleString()}</span>
+            </div>
+            {(item.tomatoSachets || 0) > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground pl-4">
+                <span>+ 🍅 {item.tomatoSachets} tomato sachet{item.tomatoSachets === 1 ? "" : "s"}</span>
+                <span>KES {(item.tomatoSachets * TOMATO_PASTE_UNIT_PRICE).toLocaleString()}</span>
+              </div>
+            )}
+            {item.drinkAddOns.map((d) => (
+              <div key={d.id} className="flex justify-between text-xs text-muted-foreground pl-4">
+                <span>+ 🥤 {d.quantity}x {d.name}</span>
+                <span>KES {(d.price * d.quantity).toLocaleString()}</span>
+              </div>
+            ))}
           </div>
         ))}
         <div className="border-t border-border pt-2 space-y-1">
+          {totalTomatoSachets > 0 && (
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Tomato sachets ({totalTomatoSachets} x KES {TOMATO_PASTE_UNIT_PRICE})</span>
+              <span>KES {tomatoTotal.toLocaleString()}</span>
+            </div>
+          )}
+          {drinksTotal > 0 && (
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Drink add-ons</span>
+              <span>KES {drinksTotal.toLocaleString()}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
             <span>KES {totalAmount.toLocaleString()}</span>

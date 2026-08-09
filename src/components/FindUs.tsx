@@ -77,12 +77,12 @@ export function FindUs() {
           <div className="rounded-3xl overflow-hidden shadow-card-warm border border-border min-h-[400px]">
             <iframe
               title="Munchiz location on Google Maps"
-              src="https://www.google.com/maps?q=Kanisani+Road+Nairobi&output=embed"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.8068613158825!2d37.034811475756094!3d-1.290162435632001!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f6dd8fa38a10b%3A0x6780b0b36d107995!2sMunchiz!5e0!3m2!1sen!2ske!4v1785830800938!5m2!1sen!2ske"
               width="100%"
               height="100%"
               style={{ border: 0, minHeight: "400px" }}
               loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+              referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
           </div>

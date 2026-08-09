@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { PasswordInput } from "@/components/PasswordInput";
 
 export const Route = createFileRoute("/admin/login")({
   component: AdminLoginPage,
@@ -64,8 +63,9 @@ function AdminLoginPage() {
             <label htmlFor="admin-password" className="block text-sm font-semibold text-secondary mb-1">
               Password
             </label>
-            <PasswordInput
+            <input
               id="admin-password"
+              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
