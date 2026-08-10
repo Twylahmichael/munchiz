@@ -40,11 +40,33 @@ export function CartDrawer() {
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [categories, menuItems]);
 
-  const extraOptions = useMemo<MenuItem[]>(() => {
-    const extrasCat = categories?.find((c) => c.slug === "extras");
-    if (!extrasCat || !menuItems) return [];
+  const burgerExtraOptions = useMemo<MenuItem[]>(() => {
+    const cat = categories?.find((c) => c.slug === "extras-burgers");
+    if (!cat || !menuItems) return [];
     return menuItems
-      .filter((m) => m.category_id === extrasCat.id && m.is_available)
+      .filter((m) => m.category_id === cat.id && m.is_available)
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [categories, menuItems]);
+
+  const pizzaExtraOptions = useMemo<MenuItem[]>(() => {
+    const cat = categories?.find((c) => c.slug === "extras-pizza");
+    if (!cat || !menuItems) return [];
+    return menuItems
+      .filter((m) => m.category_id === cat.id && m.is_available)
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [categories, menuItems]);
+
+  const FRIES_ADDON_NAMES = ["Sausage", "Smokie", "Samosa", "Chicken (2 pcs)"];
+  const friesAddonOptions = useMemo<MenuItem[]>(() => {
+    const sidesCat = categories?.find((c) => c.slug === "sides");
+    if (!sidesCat || !menuItems) return [];
+    return menuItems
+      .filter(
+        (m) =>
+          m.category_id === sidesCat.id &&
+          m.is_available &&
+          FRIES_ADDON_NAMES.includes(m.name)
+      )
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [categories, menuItems]);
 
@@ -107,6 +129,28 @@ export function CartDrawer() {
                     extraSub;
                   const alreadyPickedIds = new Set(item.drinkAddOns.map((d) => d.id));
                   const alreadyPickedExtraIds = new Set(item.extraAddOns.map((e) => e.id));
+
+                  const originalItem = menuItems?.find((m) => m.id === item.id);
+                  const originalCategory = categories?.find(
+                    (c) => c.id === originalItem?.category_id
+                  );
+
+                  let extraOptionsForItem: MenuItem[] = [];
+                  let extraPlaceholder = "➕ Add an extra…";
+                  if (originalCategory?.slug === "burgers") {
+                    extraOptionsForItem = burgerExtraOptions;
+                    extraPlaceholder = "➕ Add a burger extra…";
+                  } else if (originalCategory?.slug === "pizza") {
+                    extraOptionsForItem = pizzaExtraOptions;
+                    extraPlaceholder = "🍕 Add a pizza extra…";
+                  } else if (
+                    originalItem?.name === "Medium Seasoned Fries" ||
+                    originalItem?.name === "Large Seasoned Fries"
+                  ) {
+                    extraOptionsForItem = friesAddonOptions;
+                    extraPlaceholder = "🍟 Add a side with your fries…";
+                  }
+
                   return (
                     <div
                       key={item.id}
@@ -276,20 +320,22 @@ export function CartDrawer() {
                           </ul>
                         )}
 
-                        {extraOptions.length > 0 && (
+                        {extraOptionsForItem.length > 0 && (
                           <div className="mt-2">
                             <select
                               value=""
                               onChange={(e) => {
-                                const extra = extraOptions.find((x) => x.id === e.target.value);
+                                const extra = extraOptionsForItem.find(
+                                  (x) => x.id === e.target.value
+                                );
                                 if (extra) addExtraToItem(item.id, extra);
                                 e.target.value = "";
                               }}
                               className="w-full text-[11px] px-2 py-1 rounded-lg bg-muted border border-border text-secondary focus:outline-none focus:ring-1 focus:ring-primary"
                               aria-label="Add an extra to this meal"
                             >
-                              <option value="">➕ Add an extra…</option>
-                              {extraOptions.map((x) => (
+                              <option value="">{extraPlaceholder}</option>
+                              {extraOptionsForItem.map((x) => (
                                 <option key={x.id} value={x.id} disabled={alreadyPickedExtraIds.has(x.id)}>
                                   {x.name} — KES {x.price}
                                   {alreadyPickedExtraIds.has(x.id) ? " (added)" : ""}
