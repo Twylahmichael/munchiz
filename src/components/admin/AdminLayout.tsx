@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, UtensilsCrossed, Tag, ShoppingCart, Settings, LogOut, ArrowLeft,
-  Users, Truck, Store, Zap, Package, BarChart3, DollarSign, Megaphone,
+  Users, Truck, Store, Zap, Package, BarChart3, DollarSign, Megaphone, Plus,
   Award, Gift, Headphones, MapPin, Building2, Receipt, TrendingUp,
   ChefHat, Calendar, Target, Wallet, CreditCard, FileText,
   PanelLeftClose, PanelLeft, Bell, ClipboardList, UserPlus
@@ -20,6 +20,7 @@ const SIDEBAR_SECTIONS = [
     title: "Menu & Products",
     items: [
       { to: "/admin/meals", label: "Meals", icon: UtensilsCrossed },
+      { to: "/admin/addons", label: "Add-ons", icon: Plus },
       { to: "/admin/deals", label: "Deals", icon: Tag },
       { to: "/admin/bundles", label: "Bundles", icon: Package },
       { to: "/admin/flash-sales", label: "Flash Sales", icon: Zap },

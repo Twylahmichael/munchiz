@@ -678,6 +678,82 @@ export interface Database {
           updated_at?: string;
         };
       };
+      addon_categories: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          slug?: string;
+          sort_order?: number;
+          is_active?: boolean;
+          updated_at?: string;
+        };
+      };
+      addons: {
+        Row: {
+          id: string;
+          category_id: string;
+          name: string;
+          description: string;
+          price: number;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          category_id: string;
+          name: string;
+          description?: string;
+          price?: number;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          category_id?: string;
+          name?: string;
+          description?: string;
+          price?: number;
+          is_active?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+        };
+      };
+      menu_item_addons: {
+        Row: {
+          menu_item_id: string;
+          addon_id: string;
+          created_at: string;
+        };
+        Insert: {
+          menu_item_id: string;
+          addon_id: string;
+          created_at?: string;
+        };
+        Update: {
+          menu_item_id?: string;
+          addon_id?: string;
+        };
+      };
       branches: {
         Row: {
           id: string;
@@ -732,3 +808,6 @@ export type CustomerLead = Database["public"]["Tables"]["customer_leads"]["Row"]
 export type SupportTicket = Database["public"]["Tables"]["support_tickets"]["Row"];
 export type Zone = Database["public"]["Tables"]["zones"]["Row"];
 export type Branch = Database["public"]["Tables"]["branches"]["Row"];
+export type AddonCategory = Database["public"]["Tables"]["addon_categories"]["Row"];
+export type Addon = Database["public"]["Tables"]["addons"]["Row"];
+export type MenuItemAddon = Database["public"]["Tables"]["menu_item_addons"]["Row"];

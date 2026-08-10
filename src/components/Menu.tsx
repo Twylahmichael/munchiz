@@ -4,6 +4,8 @@ import { useCategories, useMenuItems } from "@/hooks/use-menu";
 import { useCart } from "@/lib/cart";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useAuth } from "@/hooks/use-auth";
+import { AddToCartModal } from "@/components/AddToCartModal";
+import type { MenuItem } from "@/lib/database.types";
 
 function MenuSkeleton() {
   return (
@@ -25,10 +27,11 @@ function MenuSkeleton() {
 export function Menu() {
   const { data: categories, isLoading: catsLoading } = useCategories();
   const { data: items, isLoading: itemsLoading } = useMenuItems();
-  const { addItem } = useCart();
+  const { setIsOpen: setCartOpen } = useCart();
   const { user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [activeSlug, setActiveSlug] = useState<string>("all");
+  const [pickerItem, setPickerItem] = useState<MenuItem | null>(null);
 
   const isLoading = catsLoading || itemsLoading;
 
@@ -151,7 +154,7 @@ export function Menu() {
                       {item.description}
                     </p>
                     <button
-                      onClick={() => addItem(item)}
+                      onClick={() => setPickerItem(item)}
                       disabled={!item.is_available}
                       className="inline-flex w-full items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-3 rounded-full font-bold uppercase text-sm tracking-wide hover:bg-secondary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -165,6 +168,17 @@ export function Menu() {
           </div>
         )}
       </div>
+
+      {pickerItem && (
+        <AddToCartModal
+          item={pickerItem}
+          onClose={() => setPickerItem(null)}
+          onCheckout={() => {
+            setPickerItem(null);
+            setCartOpen(true);
+          }}
+        />
+      )}
     </section>
   );
 }

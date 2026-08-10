@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, Tag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useCart, TOMATO_PASTE_UNIT_PRICE, itemDrinksSubtotal } from "@/lib/cart";
+import { useCart, itemAddonsSubtotal } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import type { Zone, Promo } from "@/lib/database.types";
@@ -24,7 +24,7 @@ function formatPhone(phone: string): string {
 }
 
 export function CheckoutForm({ onBack }: { onBack: () => void }) {
-  const { items, totalAmount, totalTomatoSachets, tomatoTotal, drinksTotal, clearCart, setIsOpen } = useCart();
+  const { items, totalAmount, addonsTotal, clearCart, setIsOpen } = useCart();
   const { user, profile } = useAuth();
 
   const [name, setName] = useState("");
@@ -187,16 +187,15 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
         quantity: i.quantity,
         unit_price: i.price,
         subtotal: i.price * i.quantity,
-        tomato_sachets: i.tomatoSachets || 0,
-        tomato_subtotal: (i.tomatoSachets || 0) * TOMATO_PASTE_UNIT_PRICE,
-        drink_add_ons: i.drinkAddOns.map((d) => ({
-          id: d.id,
-          name: d.name,
-          quantity: d.quantity,
-          unit_price: d.price,
-          subtotal: d.price * d.quantity,
+        addons: i.addons.map((a) => ({
+          id: a.id,
+          name: a.name,
+          category: a.category ?? null,
+          quantity: a.quantity,
+          unit_price: a.price,
+          subtotal: a.price * a.quantity,
         })),
-        drinks_subtotal: itemDrinksSubtotal(i),
+        addons_subtotal: itemAddonsSubtotal(i),
       }));
 
       const { data: order, error: orderError } = await supabase
@@ -222,26 +221,25 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
       if (orderError) throw orderError;
 
       const orderItems = items.flatMap((i) => {
-        const tomatoNote = (i.tomatoSachets || 0) > 0
-          ? ` (+${i.tomatoSachets} tomato sachet${i.tomatoSachets === 1 ? "" : "s"})`
-          : "";
+        // Meal row = base price only; each add-on becomes its own order_items
+        // row so the kitchen / sales report see them as line items.
         const mealRow = {
           order_id: order.id,
           menu_item_id: i.id,
-          item_name: i.name + tomatoNote,
+          item_name: i.name,
           quantity: i.quantity,
           unit_price: i.price,
-          subtotal: i.price * i.quantity + (i.tomatoSachets || 0) * TOMATO_PASTE_UNIT_PRICE,
+          subtotal: i.price * i.quantity,
         };
-        const drinkRows = i.drinkAddOns.map((d) => ({
+        const addonRows = i.addons.map((a) => ({
           order_id: order.id,
-          menu_item_id: d.id,
-          item_name: `${d.name} (with ${i.name})`,
-          quantity: d.quantity,
-          unit_price: d.price,
-          subtotal: d.price * d.quantity,
+          menu_item_id: i.id, // parent meal — addon is not itself a menu_item
+          item_name: `${a.name} (with ${i.name})`,
+          quantity: a.quantity,
+          unit_price: a.price,
+          subtotal: a.price * a.quantity,
         }));
-        return [mealRow, ...drinkRows];
+        return [mealRow, ...addonRows];
       });
 
       await supabase.from("order_items").insert(orderItems);
@@ -314,31 +312,19 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
               <span className="text-muted-foreground">{item.quantity}x {item.name}</span>
               <span className="font-semibold">KES {(item.price * item.quantity).toLocaleString()}</span>
             </div>
-            {(item.tomatoSachets || 0) > 0 && (
-              <div className="flex justify-between text-xs text-muted-foreground pl-4">
-                <span>+ 🍅 {item.tomatoSachets} tomato sachet{item.tomatoSachets === 1 ? "" : "s"}</span>
-                <span>KES {(item.tomatoSachets * TOMATO_PASTE_UNIT_PRICE).toLocaleString()}</span>
-              </div>
-            )}
-            {item.drinkAddOns.map((d) => (
-              <div key={d.id} className="flex justify-between text-xs text-muted-foreground pl-4">
-                <span>+ 🥤 {d.quantity}x {d.name}</span>
-                <span>KES {(d.price * d.quantity).toLocaleString()}</span>
+            {item.addons.map((a) => (
+              <div key={a.id} className="flex justify-between text-xs text-muted-foreground pl-4">
+                <span>+ {a.quantity}× {a.name}</span>
+                <span>KES {(a.price * a.quantity).toLocaleString()}</span>
               </div>
             ))}
           </div>
         ))}
         <div className="border-t border-border pt-2 space-y-1">
-          {totalTomatoSachets > 0 && (
+          {addonsTotal > 0 && (
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Tomato sachets ({totalTomatoSachets} x KES {TOMATO_PASTE_UNIT_PRICE})</span>
-              <span>KES {tomatoTotal.toLocaleString()}</span>
-            </div>
-          )}
-          {drinksTotal > 0 && (
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Drink add-ons</span>
-              <span>KES {drinksTotal.toLocaleString()}</span>
+              <span>Add-ons</span>
+              <span>KES {addonsTotal.toLocaleString()}</span>
             </div>
           )}
           <div className="flex justify-between text-sm">

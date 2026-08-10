@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ImageUpload } from "@/components/ImageUpload";
-import type { MenuItem, Category } from "@/lib/database.types";
+import type { MenuItem, Category, Addon, AddonCategory } from "@/lib/database.types";
 
 export function AdminMenuManager() {
   const queryClient = useQueryClient();
@@ -160,6 +160,42 @@ function MenuItemForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Available add-ons (all) + which are currently attached to this item.
+  const { data: addonCategories } = useQuery({
+    queryKey: ["admin-addon-categories"],
+    queryFn: async () => {
+      const { data } = await supabase.from("addon_categories").select("*").order("sort_order");
+      return (data ?? []) as AddonCategory[];
+    },
+  });
+  const { data: addons } = useQuery({
+    queryKey: ["admin-addons"],
+    queryFn: async () => {
+      const { data } = await supabase.from("addons").select("*").order("sort_order");
+      return (data ?? []) as Addon[];
+    },
+  });
+  const [selectedAddonIds, setSelectedAddonIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!item) { setSelectedAddonIds(new Set()); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("menu_item_addons")
+        .select("addon_id")
+        .eq("menu_item_id", item.id);
+      setSelectedAddonIds(new Set((data ?? []).map((r: any) => r.addon_id)));
+    })();
+  }, [item]);
+
+  function toggleAddon(id: string) {
+    setSelectedAddonIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -177,12 +213,31 @@ function MenuItemForm({
         is_available: available,
       };
 
+      let savedId = item?.id;
       if (item) {
         const { error: e } = await supabase.from("menu_items").update(data).eq("id", item.id);
         if (e) throw e;
       } else {
-        const { error: e } = await supabase.from("menu_items").insert(data);
+        const { data: inserted, error: e } = await supabase.from("menu_items").insert(data).select("id").single();
         if (e) throw e;
+        savedId = (inserted as any)?.id;
+      }
+
+      // Sync menu_item_addons: clear then re-insert the picked set.
+      if (savedId) {
+        const { error: delErr } = await supabase
+          .from("menu_item_addons")
+          .delete()
+          .eq("menu_item_id", savedId);
+        if (delErr) throw delErr;
+        if (selectedAddonIds.size > 0) {
+          const rows = Array.from(selectedAddonIds).map((addon_id) => ({
+            menu_item_id: savedId!,
+            addon_id,
+          }));
+          const { error: insErr } = await supabase.from("menu_item_addons").insert(rows);
+          if (insErr) throw insErr;
+        }
       }
       onSaved();
     } catch (err) {
@@ -237,6 +292,47 @@ function MenuItemForm({
             className={`w-10 h-5 rounded-full transition-colors relative ${available ? "bg-green-500" : "bg-white/20"}`}>
             <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${available ? "left-5" : "left-0.5"}`} />
           </button>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-xs text-white/40 mb-2">Attached add-ons</label>
+          {!addonCategories?.length ? (
+            <p className="text-xs text-white/40">
+              No add-on categories yet. Create some on the Add-ons page.
+            </p>
+          ) : (
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+              {addonCategories.map((cat) => {
+                const catAddons = (addons ?? []).filter((a) => a.category_id === cat.id);
+                if (!catAddons.length) return null;
+                return (
+                  <div key={cat.id}>
+                    <p className="text-[11px] uppercase tracking-widest text-white/40 mb-1">
+                      {cat.name}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                      {catAddons.map((a) => (
+                        <label
+                          key={a.id}
+                          className="flex items-center gap-2 text-sm text-white/80 bg-[#1a1714] border border-white/10 rounded-lg px-3 py-2 cursor-pointer hover:border-amber-500/40"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedAddonIds.has(a.id)}
+                            onChange={() => toggleAddon(a.id)}
+                            className="accent-amber-500"
+                          />
+                          <span className="flex-1 truncate">{a.name}</span>
+                          <span className="text-xs text-white/40 whitespace-nowrap">
+                            KES {a.price}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
         {error && <div className="md:col-span-2 bg-red-500/20 text-red-400 text-sm p-3 rounded-lg">{error}</div>}
         <div className="md:col-span-2 flex gap-2">

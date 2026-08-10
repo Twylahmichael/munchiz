@@ -1,11 +1,15 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import type { MenuItem } from "./database.types";
 
-export interface DrinkAddOn {
+// A generic add-on line attached to a specific cart line.
+// Add-ons are configured per menu item by the admin — the frontend
+// only needs id/name/price/quantity to bill and display them.
+export interface CartAddon {
   id: string;
   name: string;
   price: number;
   quantity: number;
+  category?: string | null;
 }
 
 export interface CartItem {
@@ -14,45 +18,78 @@ export interface CartItem {
   price: number;
   quantity: number;
   photo_url: string | null;
-  tomatoSachets: number;
-  drinkAddOns: DrinkAddOn[];
+  addons: CartAddon[];
 }
 
 interface CartContextValue {
   items: CartItem[];
-  addItem: (item: MenuItem) => void;
+  /** Add a fresh cart line, optionally with a set of pre-picked add-ons. */
+  addItem: (item: MenuItem, addons?: CartAddon[]) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
-  updateTomatoSachets: (id: string, sachets: number) => void;
-  addDrinkToItem: (itemId: string, drink: MenuItem) => void;
-  updateDrinkQuantityOnItem: (itemId: string, drinkId: string, quantity: number) => void;
-  removeDrinkFromItem: (itemId: string, drinkId: string) => void;
+  setItemAddons: (itemId: string, addons: CartAddon[]) => void;
   clearCart: () => void;
   totalItems: number;
-  totalTomatoSachets: number;
-  tomatoTotal: number;
-  drinksTotal: number;
+  addonsTotal: number;
   totalAmount: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
 
-export const TOMATO_PASTE_UNIT_PRICE = 5;
 const CART_KEY = "munchiz-cart";
 
-function drinksSubtotal(addOns: DrinkAddOn[] | undefined): number {
-  return (addOns || []).reduce((s, d) => s + d.price * d.quantity, 0);
+function addonsSubtotal(addons: CartAddon[] | undefined): number {
+  return (addons || []).reduce((s, a) => s + a.price * a.quantity, 0);
+}
+
+// Older cart shapes stored per-item `tomatoSachets` / `drinkAddOns`.
+// Migrate them into the new `addons` array on load so we never lose
+// what the user already had in-cart.
+function migrateLegacyItem(raw: any): CartItem {
+  const legacyAddons: CartAddon[] = [];
+  if (Number(raw?.tomatoSachets) > 0) {
+    legacyAddons.push({
+      id: "legacy-tomato-sachet",
+      name: "Tomato paste sachet",
+      price: 5,
+      quantity: Math.floor(Number(raw.tomatoSachets)),
+      category: "Sauces & Sachets",
+    });
+  }
+  if (Array.isArray(raw?.drinkAddOns)) {
+    for (const d of raw.drinkAddOns) {
+      legacyAddons.push({
+        id: String(d.id),
+        name: String(d.name),
+        price: Number(d.price) || 0,
+        quantity: Math.max(1, Math.floor(Number(d.quantity) || 1)),
+        category: "Drinks",
+      });
+    }
+  }
+  return {
+    id: String(raw.id),
+    name: String(raw.name),
+    price: Number(raw.price) || 0,
+    quantity: Math.max(1, Math.floor(Number(raw.quantity) || 1)),
+    photo_url: raw.photo_url ?? null,
+    addons: Array.isArray(raw?.addons)
+      ? raw.addons.map((a: any) => ({
+          id: String(a.id),
+          name: String(a.name),
+          price: Number(a.price) || 0,
+          quantity: Math.max(1, Math.floor(Number(a.quantity) || 1)),
+          category: a.category ?? null,
+        }))
+      : legacyAddons,
+  };
 }
 
 function loadCart(): CartItem[] {
   try {
     const raw = localStorage.getItem(CART_KEY);
-    const parsed = raw ? (JSON.parse(raw) as CartItem[]) : [];
-    return parsed.map((i) => ({
-      ...i,
-      tomatoSachets: i.tomatoSachets ?? 0,
-      drinkAddOns: Array.isArray(i.drinkAddOns) ? i.drinkAddOns : [],
-    }));
+    const parsed = raw ? (JSON.parse(raw) as any[]) : [];
+    return parsed.map(migrateLegacyItem);
   } catch {
     return [];
   }
@@ -62,22 +99,39 @@ function saveCart(items: CartItem[]) {
   localStorage.setItem(CART_KEY, JSON.stringify(items));
 }
 
+function mergeAddons(existing: CartAddon[], incoming: CartAddon[]): CartAddon[] {
+  const out: CartAddon[] = existing.map((a) => ({ ...a }));
+  for (const inc of incoming) {
+    const match = out.find((e) => e.id === inc.id);
+    if (match) match.quantity += inc.quantity;
+    else out.push({ ...inc });
+  }
+  return out;
+}
+
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(loadCart);
+  // NOTE: `addItem` no longer opens the drawer. Checkout is intentional —
+  // the user opens the cart from the navbar cart icon.
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     saveCart(items);
   }, [items]);
 
-  const addItem = useCallback((menuItem: MenuItem) => {
+  const addItem = useCallback((menuItem: MenuItem, addons: CartAddon[] = []) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === menuItem.id);
+      // If the item is already in the cart, bump quantity and merge new
+      // add-ons into the existing line so it stays consolidated.
       if (existing) {
+        const mergedAddons = mergeAddons(existing.addons, addons);
         return prev.map((i) =>
-          i.id === menuItem.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.id === menuItem.id
+            ? { ...i, quantity: i.quantity + 1, addons: mergedAddons }
+            : i
         );
       }
       return [
@@ -88,12 +142,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
           price: menuItem.price,
           quantity: 1,
           photo_url: menuItem.photo_url,
-          tomatoSachets: 0,
-          drinkAddOns: [],
+          addons,
         },
       ];
     });
-    setIsOpen(true);
   }, []);
 
   const removeItem = useCallback((id: string) => {
@@ -110,62 +162,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  const updateTomatoSachets = useCallback((id: string, sachets: number) => {
-    const safe = Math.max(0, Math.min(99, Math.floor(sachets)));
+  const setItemAddons = useCallback((itemId: string, addons: CartAddon[]) => {
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, tomatoSachets: safe } : i))
-    );
-  }, []);
-
-  const addDrinkToItem = useCallback((itemId: string, drink: MenuItem) => {
-    setItems((prev) =>
-      prev.map((i) => {
-        if (i.id !== itemId) return i;
-        const existing = i.drinkAddOns.find((d) => d.id === drink.id);
-        if (existing) {
-          return {
-            ...i,
-            drinkAddOns: i.drinkAddOns.map((d) =>
-              d.id === drink.id ? { ...d, quantity: d.quantity + 1 } : d
-            ),
-          };
-        }
-        return {
-          ...i,
-          drinkAddOns: [
-            ...i.drinkAddOns,
-            { id: drink.id, name: drink.name, price: drink.price, quantity: 1 },
-          ],
-        };
-      })
-    );
-  }, []);
-
-  const updateDrinkQuantityOnItem = useCallback((itemId: string, drinkId: string, quantity: number) => {
-    const safe = Math.max(0, Math.min(99, Math.floor(quantity)));
-    setItems((prev) =>
-      prev.map((i) => {
-        if (i.id !== itemId) return i;
-        if (safe === 0) {
-          return { ...i, drinkAddOns: i.drinkAddOns.filter((d) => d.id !== drinkId) };
-        }
-        return {
-          ...i,
-          drinkAddOns: i.drinkAddOns.map((d) =>
-            d.id === drinkId ? { ...d, quantity: safe } : d
-          ),
-        };
-      })
-    );
-  }, []);
-
-  const removeDrinkFromItem = useCallback((itemId: string, drinkId: string) => {
-    setItems((prev) =>
-      prev.map((i) =>
-        i.id === itemId
-          ? { ...i, drinkAddOns: i.drinkAddOns.filter((d) => d.id !== drinkId) }
-          : i
-      )
+      prev.map((i) => (i.id === itemId ? { ...i, addons } : i))
     );
   }, []);
 
@@ -174,11 +173,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalTomatoSachets = items.reduce((sum, i) => sum + (i.tomatoSachets || 0), 0);
-  const tomatoTotal = totalTomatoSachets * TOMATO_PASTE_UNIT_PRICE;
-  const drinksTotal = items.reduce((sum, i) => sum + drinksSubtotal(i.drinkAddOns), 0);
+  const addonsTotal = items.reduce((sum, i) => sum + addonsSubtotal(i.addons), 0);
   const totalAmount =
-    items.reduce((sum, i) => sum + i.price * i.quantity, 0) + tomatoTotal + drinksTotal;
+    items.reduce((sum, i) => sum + i.price * i.quantity, 0) + addonsTotal;
 
   return (
     <CartContext value={{
@@ -186,15 +183,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addItem,
       removeItem,
       updateQuantity,
-      updateTomatoSachets,
-      addDrinkToItem,
-      updateDrinkQuantityOnItem,
-      removeDrinkFromItem,
+      setItemAddons,
       clearCart,
       totalItems,
-      totalTomatoSachets,
-      tomatoTotal,
-      drinksTotal,
+      addonsTotal,
       totalAmount,
       isOpen,
       setIsOpen,
@@ -210,6 +202,10 @@ export function useCart() {
   return ctx;
 }
 
-export function itemDrinksSubtotal(item: Pick<CartItem, "drinkAddOns">): number {
-  return drinksSubtotal(item.drinkAddOns);
+export function itemAddonsSubtotal(item: Pick<CartItem, "addons">): number {
+  return addonsSubtotal(item.addons);
+}
+
+export function itemLineTotal(item: CartItem): number {
+  return item.price * item.quantity + addonsSubtotal(item.addons);
 }
