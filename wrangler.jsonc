@@ -8,7 +8,7 @@
   "workers_dev": true,
   "preview_urls": true,
   "routes": [
-    { "pattern": "munchiz.ke",     "custom_domain": true },
+    { "pattern": "munchiz.ke", "custom_domain": true },
     { "pattern": "www.munchiz.ke", "custom_domain": true }
   ],
 }

@@ -144,8 +144,9 @@ export function CheckoutForm({ onBack }: { onBack: () => void }) {
         <p className="text-muted-foreground text-sm mb-6">
           Create an account or sign in to place your order.
         </p>
+        
         <a
-          href={`/sign-in?returnTo=/`}
+          href={"/sign-in?returnTo=/"}
           className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold uppercase tracking-wide hover:bg-secondary transition-colors"
         >
           Sign In

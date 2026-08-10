@@ -35,11 +35,13 @@ export function Menu() {
 
   const isLoading = catsLoading || itemsLoading;
 
+  const visibleCategories = categories?.filter((c) => c.is_active);
+
   const filtered =
     activeSlug === "all"
-      ? items
+      ? items?.filter((i) => visibleCategories?.some((c) => c.id === i.category_id))
       : items?.filter((i) => {
-          const cat = categories?.find((c) => c.id === i.category_id);
+          const cat = visibleCategories?.find((c) => c.id === i.category_id);
           return cat?.slug === activeSlug;
         });
 
@@ -75,7 +77,7 @@ export function Menu() {
           >
             All
           </button>
-          {categories?.map((cat) => {
+          {visibleCategories?.map((cat) => {
             const isActive = cat.slug === activeSlug;
             return (
               <button

@@ -43,6 +43,7 @@ import { Route as AdminDealsRouteImport } from './routes/admin/deals'
 import { Route as AdminCampaignsRouteImport } from './routes/admin/campaigns'
 import { Route as AdminBundlesRouteImport } from './routes/admin/bundles'
 import { Route as AdminBranchesRouteImport } from './routes/admin/branches'
+import { Route as AdminAddonsRouteImport } from './routes/admin/addons'
 
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
@@ -214,6 +215,11 @@ const AdminBranchesRoute = AdminBranchesRouteImport.update({
   path: '/admin/branches',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAddonsRoute = AdminAddonsRouteImport.update({
+  id: '/admin/addons',
+  path: '/admin/addons',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/branches': typeof AdminBranchesRoute
   '/admin/bundles': typeof AdminBundlesRoute
   '/admin/campaigns': typeof AdminCampaignsRoute
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/branches': typeof AdminBranchesRoute
   '/admin/bundles': typeof AdminBundlesRoute
   '/admin/campaigns': typeof AdminCampaignsRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/branches': typeof AdminBranchesRoute
   '/admin/bundles': typeof AdminBundlesRoute
   '/admin/campaigns': typeof AdminCampaignsRoute
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/admin/addons'
     | '/admin/branches'
     | '/admin/bundles'
     | '/admin/campaigns'
@@ -369,6 +379,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/admin/addons'
     | '/admin/branches'
     | '/admin/bundles'
     | '/admin/campaigns'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
+    | '/admin/addons'
     | '/admin/branches'
     | '/admin/bundles'
     | '/admin/campaigns'
@@ -442,6 +454,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  AdminAddonsRoute: typeof AdminAddonsRoute
   AdminBranchesRoute: typeof AdminBranchesRoute
   AdminBundlesRoute: typeof AdminBundlesRoute
   AdminCampaignsRoute: typeof AdminCampaignsRoute
@@ -712,6 +725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBranchesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/addons': {
+      id: '/admin/addons'
+      path: '/admin/addons'
+      fullPath: '/admin/addons'
+      preLoaderRoute: typeof AdminAddonsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -722,6 +742,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  AdminAddonsRoute: AdminAddonsRoute,
   AdminBranchesRoute: AdminBranchesRoute,
   AdminBundlesRoute: AdminBundlesRoute,
   AdminCampaignsRoute: AdminCampaignsRoute,
