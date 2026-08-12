@@ -140,7 +140,16 @@ function MyOrders() {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground pt-2">
-                        <div>Type: <span className="capitalize font-medium text-secondary">{order.order_type}</span></div>
+                        <div>
+                          {order.order_type === "pickup" ? "🏬 " : "🚚 "}
+                          <span className="capitalize font-medium text-secondary">{order.order_type}</span>
+                          {order.order_type === "pickup" && order.pickup_branch_name && (
+                            <span className="text-muted-foreground"> — {order.pickup_branch_name}</span>
+                          )}
+                          {order.order_type === "delivery" && order.zone_name && (
+                            <span className="text-muted-foreground"> — {order.zone_name}</span>
+                          )}
+                        </div>
                         <div>Payment: <span className="capitalize font-medium text-secondary">{order.payment_method}</span></div>
                         {order.delivery_address && <div className="col-span-2">Address: {order.delivery_address}</div>}
                       </div>

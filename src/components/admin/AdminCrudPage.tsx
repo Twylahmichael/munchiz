@@ -16,6 +16,8 @@ interface Field {
   required?: boolean;
   options?: { value: string; label: string }[];
   placeholder?: string;
+  /** When set to "csv_to_array", the text input value is split on commas and stored as a string array. */
+  transform?: "csv_to_array";
 }
 
 interface AdminCrudPageProps {
@@ -148,11 +150,24 @@ function CrudForm({ item, fields, table, defaultValues, onClose, onSaved }: {
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     if (item) {
       const v: Record<string, unknown> = {};
-      fields.forEach((f) => { v[f.key] = item[f.key] ?? defaultValues[f.key] ?? ""; });
+      fields.forEach((f) => {
+        let val = item[f.key] ?? defaultValues[f.key] ?? "";
+        // Convert arrays back to CSV string for editing
+        if (f.transform === "csv_to_array" && Array.isArray(val)) {
+          val = (val as string[]).join(", ");
+        }
+        v[f.key] = val;
+      });
       return v;
     }
     const v: Record<string, unknown> = {};
-    fields.forEach((f) => { v[f.key] = defaultValues[f.key] ?? ""; });
+    fields.forEach((f) => {
+      let val = defaultValues[f.key] ?? "";
+      if (f.transform === "csv_to_array" && Array.isArray(val)) {
+        val = (val as string[]).join(", ");
+      }
+      v[f.key] = val;
+    });
     return v;
   });
   const [saving, setSaving] = useState(false);
@@ -172,6 +187,9 @@ function CrudForm({ item, fields, table, defaultValues, onClose, onSaved }: {
         let val = values[f.key];
         if (f.type === "number") val = Number(val) || 0;
         if (f.type === "toggle") val = Boolean(val);
+        if (f.transform === "csv_to_array") {
+          val = String(val || "").split(",").map((s: string) => s.trim()).filter(Boolean);
+        }
         data[f.key] = val;
       });
 

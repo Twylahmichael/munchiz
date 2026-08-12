@@ -176,6 +176,11 @@ export interface Database {
           delivery_address: string | null;
           delivery_notes: string | null;
           location_notes: string | null;
+          pickup_branch_id: string | null;
+          pickup_branch_name: string | null;
+          zone_id: string | null;
+          zone_name: string | null;
+          estimated_time_minutes: number | null;
           items_summary: Json;
           subtotal: number;
           delivery_fee: number;
@@ -197,6 +202,11 @@ export interface Database {
           delivery_address?: string | null;
           delivery_notes?: string | null;
           location_notes?: string | null;
+          pickup_branch_id?: string | null;
+          pickup_branch_name?: string | null;
+          zone_id?: string | null;
+          zone_name?: string | null;
+          estimated_time_minutes?: number | null;
           items_summary: Json;
           subtotal?: number;
           delivery_fee?: number;
@@ -217,6 +227,11 @@ export interface Database {
           delivery_address?: string | null;
           delivery_notes?: string | null;
           location_notes?: string | null;
+          pickup_branch_id?: string | null;
+          pickup_branch_name?: string | null;
+          zone_id?: string | null;
+          zone_name?: string | null;
+          estimated_time_minutes?: number | null;
           items_summary?: Json;
           subtotal?: number;
           delivery_fee?: number;
@@ -657,6 +672,8 @@ export interface Database {
           name: string;
           delivery_fee: number;
           estimated_time_minutes: number;
+          areas: string[];
+          description: string;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -666,6 +683,8 @@ export interface Database {
           name: string;
           delivery_fee?: number;
           estimated_time_minutes?: number;
+          areas?: string[];
+          description?: string;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -674,6 +693,8 @@ export interface Database {
           name?: string;
           delivery_fee?: number;
           estimated_time_minutes?: number;
+          areas?: string[];
+          description?: string;
           is_active?: boolean;
           updated_at?: string;
         };
@@ -761,6 +782,7 @@ export interface Database {
           address: string;
           phone: string;
           operating_hours: Json;
+          estimated_pickup_minutes: number;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -771,6 +793,7 @@ export interface Database {
           address?: string;
           phone?: string;
           operating_hours?: Json;
+          estimated_pickup_minutes?: number;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -780,6 +803,7 @@ export interface Database {
           address?: string;
           phone?: string;
           operating_hours?: Json;
+          estimated_pickup_minutes?: number;
           is_active?: boolean;
           updated_at?: string;
         };
