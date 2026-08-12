@@ -127,7 +127,20 @@ export function AdminOrdersManager() {
                     <div className="space-y-2 text-sm">
                       <p className="text-white/40 text-xs uppercase tracking-wider">Customer</p>
                       <p className="text-white">{order.customer_name} &middot; {order.customer_phone}</p>
-                      <p className="text-white/60 capitalize">{order.order_type}</p>
+                      <p className="text-white/60 capitalize">
+                        {order.order_type === "pickup" ? "🏬 Pickup" : "🚚 Delivery"}
+                        {order.order_type === "pickup" && order.pickup_branch_name && (
+                          <span className="text-white/40"> — {order.pickup_branch_name}</span>
+                        )}
+                        {order.order_type === "delivery" && order.zone_name && (
+                          <span className="text-white/40"> — {order.zone_name} zone</span>
+                        )}
+                      </p>
+                      {order.estimated_time_minutes && (
+                        <p className="text-amber-400/80 text-xs">
+                          Est. {order.order_type === "pickup" ? "ready" : "delivery"}: ~{order.estimated_time_minutes} min
+                        </p>
+                      )}
                       {order.delivery_address && <p className="text-white/40">{order.delivery_address}</p>}
                       {order.delivery_notes && <p className="text-white/40 italic">{order.delivery_notes}</p>}
                       <p className="text-white/30 text-xs">
