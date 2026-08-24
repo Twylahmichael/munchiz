@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { X, ChevronDown, Plus } from "lucide-react";
 import type { MenuItem } from "@/lib/database.types";
 import { useCart, type CartAddon } from "@/lib/cart";
 import { useMenuItemAddonsGrouped } from "@/hooks/use-addons";
+import { QuantityStepper } from "./QuantityStepper";
 
 interface AddToCartModalProps {
   item: MenuItem;
@@ -11,37 +12,43 @@ interface AddToCartModalProps {
   onCheckout: () => void;
 }
 
-/** Small controlled quantity input used per add-on row. */
-function QtyInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  return (
-    <input
-      type="number"
-      min={1}
-      max={99}
-      value={value}
-      onChange={(e) => {
-        const n = Math.max(1, Math.min(99, Math.floor(Number(e.target.value) || 1)));
-        onChange(n);
-      }}
-      className="w-16 px-2 py-1 rounded-md border border-border bg-background text-secondary text-sm text-right focus:outline-none focus:ring-1 focus:ring-primary"
-    />
-  );
-}
+const MAIN_QTY_MIN = 1;
+const MAIN_QTY_MAX = 20;
 
 export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProps) {
   const { addItem } = useCart();
   const { data: groups, isLoading } = useMenuItemAddonsGrouped(item.id);
 
-  // Track per-addon-id { checked, quantity }.
-  const [state, setState] = useState<Record<string, { checked: boolean; quantity: number }>>({});
-  // Open the first group by default so the modal isn't a wall of collapsed accordions.
-  const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
+  // Main item quantity (how many of this menu item to add).
+  const [mainQty, setMainQty] = useState(1);
 
-  useEffect(() => {
-    if (groups.length > 0 && openCategoryId === null) {
-      setOpenCategoryId(groups[0].category.id);
-    }
-  }, [groups, openCategoryId]);
+  // Track per-addon-id { checked, quantity }. quantity 0 (or checked=false)
+  // means the add-on is not selected.
+  const [state, setState] = useState<Record<string, { checked: boolean; quantity: number }>>({});
+
+  // Which add-on groups are collapsed, keyed by category id. Independent
+  // per group — collapsing one never affects another. Selections inside a
+  // group persist even while it's collapsed since this only controls
+  // visibility, not the `state` map above.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  function toggleGroup(categoryId: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
+      return next;
+    });
+  }
+
+  function setAddonQuantity(addonId: string, quantity: number) {
+    setState((prev) => {
+      if (quantity <= 0) {
+        return { ...prev, [addonId]: { checked: false, quantity: 0 } };
+      }
+      return { ...prev, [addonId]: { checked: true, quantity } };
+    });
+  }
 
   const pickedAddons = useMemo<CartAddon[]>(() => {
     const out: CartAddon[] = [];
@@ -63,10 +70,10 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
   }, [state, groups]);
 
   const addonsSubtotal = pickedAddons.reduce((sum, a) => sum + a.price * a.quantity, 0);
-  const lineTotal = item.price + addonsSubtotal;
+  const lineTotal = item.price * mainQty + addonsSubtotal;
 
   function commit(nextAction: "continue" | "checkout") {
-    addItem(item, pickedAddons);
+    addItem(item, pickedAddons, mainQty);
     if (nextAction === "checkout") onCheckout();
     else onClose();
   }
@@ -108,13 +115,22 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
               <p className="text-sm text-muted-foreground">{item.description}</p>
             )}
 
+            <div className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3">
+              <span className="text-sm font-semibold text-secondary">Quantity</span>
+              <QuantityStepper
+                value={mainQty}
+                onChange={setMainQty}
+                min={MAIN_QTY_MIN}
+                max={MAIN_QTY_MAX}
+                ariaLabel={`${item.name} quantity`}
+              />
+            </div>
+
             {isLoading ? (
-              <div className="py-6 text-center text-muted-foreground text-sm">
-                Loading options…
-              </div>
+              <div className="py-6 text-center text-muted-foreground text-sm">Loading options…</div>
             ) : hasAddons ? (
               groups.map((g) => {
-                const isOpen = openCategoryId === g.category.id;
+                const isCollapsed = collapsedGroups.has(g.category.id);
                 return (
                   <section
                     key={g.category.id}
@@ -122,39 +138,26 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
                   >
                     <button
                       type="button"
-                      onClick={() => setOpenCategoryId(isOpen ? null : g.category.id)}
+                      onClick={() => toggleGroup(g.category.id)}
                       className="w-full flex items-center justify-between px-4 py-3 bg-background hover:bg-muted transition-colors text-left"
-                      aria-expanded={isOpen}
+                      aria-expanded={!isCollapsed}
                     >
                       <span className="font-semibold text-secondary">{g.category.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {isOpen ? "Hide" : `${g.addons.length} option${g.addons.length === 1 ? "" : "s"}`}
+                      <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-primary">
+                        {isCollapsed ? "Show" : "Hide"}
+                        <ChevronDown
+                          size={14}
+                          className={`transition-transform ${isCollapsed ? "" : "rotate-180"}`}
+                        />
                       </span>
                     </button>
-                    {isOpen && (
+                    {!isCollapsed && (
                       <ul className="divide-y divide-border">
                         {g.addons.map((a) => {
-                          const s = state[a.id] ?? { checked: false, quantity: 1 };
+                          const s = state[a.id] ?? { checked: false, quantity: 0 };
+                          const selected = s.checked && s.quantity > 0;
                           return (
-                            <li
-                              key={a.id}
-                              className="flex items-center gap-3 px-4 py-3 bg-card"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={s.checked}
-                                onChange={(e) =>
-                                  setState((prev) => ({
-                                    ...prev,
-                                    [a.id]: {
-                                      checked: e.target.checked,
-                                      quantity: prev[a.id]?.quantity ?? 1,
-                                    },
-                                  }))
-                                }
-                                className="w-5 h-5 accent-primary flex-shrink-0"
-                                aria-label={`Add ${a.name}`}
-                              />
+                            <li key={a.id} className="flex items-center gap-3 px-4 py-3 bg-card">
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-secondary truncate">
                                   {a.name}
@@ -165,19 +168,35 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
                                   </p>
                                 )}
                               </div>
-                              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                                +KES {a.price.toLocaleString()}
-                              </span>
-                              {s.checked && (
-                                <QtyInput
+                              {selected && s.quantity > 1 ? (
+                                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                  {s.quantity}× KES {a.price.toLocaleString()} ={" "}
+                                  <span className="font-semibold text-secondary">
+                                    KES {(a.price * s.quantity).toLocaleString()}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                  +KES {a.price.toLocaleString()}
+                                </span>
+                              )}
+                              {selected ? (
+                                <QuantityStepper
                                   value={s.quantity}
-                                  onChange={(q) =>
-                                    setState((prev) => ({
-                                      ...prev,
-                                      [a.id]: { checked: true, quantity: q },
-                                    }))
-                                  }
+                                  onChange={(q) => setAddonQuantity(a.id, q)}
+                                  min={0}
+                                  max={99}
+                                  ariaLabel={`${a.name} quantity`}
                                 />
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setAddonQuantity(a.id, 1)}
+                                  className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors flex-shrink-0"
+                                  aria-label={`Add ${a.name}`}
+                                >
+                                  <Plus size={14} />
+                                </button>
                               )}
                             </li>
                           );

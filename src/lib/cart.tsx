@@ -23,8 +23,8 @@ export interface CartItem {
 
 interface CartContextValue {
   items: CartItem[];
-  /** Add a fresh cart line, optionally with a set of pre-picked add-ons. */
-  addItem: (item: MenuItem, addons?: CartAddon[]) => void;
+  /** Add a fresh cart line, optionally with a set of pre-picked add-ons and a starting quantity. */
+  addItem: (item: MenuItem, addons?: CartAddon[], quantity?: number) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   setItemAddons: (itemId: string, addons: CartAddon[]) => void;
@@ -121,32 +121,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
     saveCart(items);
   }, [items]);
 
-  const addItem = useCallback((menuItem: MenuItem, addons: CartAddon[] = []) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.id === menuItem.id);
-      // If the item is already in the cart, bump quantity and merge new
-      // add-ons into the existing line so it stays consolidated.
-      if (existing) {
-        const mergedAddons = mergeAddons(existing.addons, addons);
-        return prev.map((i) =>
-          i.id === menuItem.id
-            ? { ...i, quantity: i.quantity + 1, addons: mergedAddons }
-            : i
-        );
-      }
-      return [
-        ...prev,
-        {
-          id: menuItem.id,
-          name: menuItem.name,
-          price: menuItem.price,
-          quantity: 1,
-          photo_url: menuItem.photo_url,
-          addons,
-        },
-      ];
-    });
-  }, []);
+  const addItem = useCallback(
+    (menuItem: MenuItem, addons: CartAddon[] = [], quantity: number = 1) => {
+      const qty = Math.max(1, Math.floor(quantity));
+      setItems((prev) => {
+        const existing = prev.find((i) => i.id === menuItem.id);
+        // If the item is already in the cart, bump quantity and merge new
+        // add-ons into the existing line so it stays consolidated.
+        if (existing) {
+          const mergedAddons = mergeAddons(existing.addons, addons);
+          return prev.map((i) =>
+            i.id === menuItem.id ? { ...i, quantity: i.quantity + qty, addons: mergedAddons } : i,
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: menuItem.id,
+            name: menuItem.name,
+            price: menuItem.price,
+            quantity: qty,
+            photo_url: menuItem.photo_url,
+            addons,
+          },
+        ];
+      });
+    },
+    [],
+  );
 
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -157,15 +159,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems((prev) => prev.filter((i) => i.id !== id));
       return;
     }
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity } : i))
-    );
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
   }, []);
 
   const setItemAddons = useCallback((itemId: string, addons: CartAddon[]) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === itemId ? { ...i, addons } : i))
-    );
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, addons } : i)));
   }, []);
 
   const clearCart = useCallback(() => {
@@ -174,23 +172,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const addonsTotal = items.reduce((sum, i) => sum + addonsSubtotal(i.addons), 0);
-  const totalAmount =
-    items.reduce((sum, i) => sum + i.price * i.quantity, 0) + addonsTotal;
+  const totalAmount = items.reduce((sum, i) => sum + i.price * i.quantity, 0) + addonsTotal;
 
   return (
-    <CartContext value={{
-      items,
-      addItem,
-      removeItem,
-      updateQuantity,
-      setItemAddons,
-      clearCart,
-      totalItems,
-      addonsTotal,
-      totalAmount,
-      isOpen,
-      setIsOpen,
-    }}>
+    <CartContext
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        setItemAddons,
+        clearCart,
+        totalItems,
+        addonsTotal,
+        totalAmount,
+        isOpen,
+        setIsOpen,
+      }}
+    >
       {children}
     </CartContext>
   );
