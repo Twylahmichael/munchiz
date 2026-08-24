@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { X, Trash2, ShoppingBag } from "lucide-react";
 import { useCart, itemLineTotal } from "@/lib/cart";
 import { CheckoutForm } from "./CheckoutForm";
+import { QuantityStepper } from "./QuantityStepper";
 
 export function CartDrawer() {
   const {
@@ -91,24 +92,14 @@ export function CartDrawer() {
                         <p className="text-primary font-bold text-sm">
                           KES {lineTotal.toLocaleString()}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <span className="text-sm font-bold w-6 text-center">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus size={14} />
-                          </button>
+                        <div className="mt-1">
+                          <QuantityStepper
+                            value={item.quantity}
+                            onChange={(q) => updateQuantity(item.id, q)}
+                            min={0}
+                            max={99}
+                            ariaLabel={`${item.name} quantity`}
+                          />
                         </div>
                         {item.addons.length > 0 && (
                           <ul className="mt-2 pt-2 border-t border-border/60 space-y-1">
@@ -117,7 +108,9 @@ export function CartDrawer() {
                                 key={a.id}
                                 className="flex items-center justify-between text-[11px] text-muted-foreground"
                               >
-                                <span className="truncate">+ {a.quantity}× {a.name}</span>
+                                <span className="truncate">
+                                  + {a.quantity}× {a.name}
+                                </span>
                                 <span className="whitespace-nowrap ml-2">
                                   KES {(a.price * a.quantity).toLocaleString()}
                                 </span>
