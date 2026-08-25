@@ -1,6 +1,18 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type OrderStatus = "pending" | "confirmed" | "preparing" | "on_the_way" | "completed" | "cancelled";
+/** One selectable variant of a two-option combo, e.g. "burger" vs "nuggets". */
+export interface ComboOption {
+  label: string;
+  items: string[];
+}
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "on_the_way"
+  | "completed"
+  | "cancelled";
 export type OrderType = "delivery" | "pickup";
 export type PaymentMethod = "cash" | "mpesa";
 export type PaymentStatus = "pending" | "paid" | "failed";
@@ -96,6 +108,8 @@ export interface Database {
           is_available: boolean;
           sort_order: number;
           favorites_count: number;
+          combo_options: ComboOption[];
+          drink_choice_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -109,6 +123,8 @@ export interface Database {
           is_available?: boolean;
           sort_order?: number;
           favorites_count?: number;
+          combo_options?: ComboOption[];
+          drink_choice_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -121,6 +137,8 @@ export interface Database {
           is_available?: boolean;
           sort_order?: number;
           favorites_count?: number;
+          combo_options?: ComboOption[];
+          drink_choice_count?: number;
           updated_at?: string;
         };
       };
