@@ -11,7 +11,10 @@ function MenuSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-card rounded-3xl overflow-hidden shadow-card-warm border border-border animate-pulse">
+        <div
+          key={i}
+          className="bg-card rounded-3xl overflow-hidden shadow-card-warm border border-border animate-pulse"
+        >
           <div className="aspect-[4/3] bg-muted" />
           <div className="p-5 sm:p-6 space-y-3">
             <div className="h-6 bg-muted rounded w-3/4" />
@@ -132,13 +135,20 @@ export function Menu() {
                     </span>
                     {user && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(item.id);
+                        }}
                         className="absolute bottom-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors shadow-sm z-10"
-                        aria-label={isFavorite(item.id) ? "Remove from favorites" : "Add to favorites"}
+                        aria-label={
+                          isFavorite(item.id) ? "Remove from favorites" : "Add to favorites"
+                        }
                       >
                         <Heart
                           size={18}
-                          className={isFavorite(item.id) ? "fill-red-500 text-red-500" : "text-gray-500"}
+                          className={
+                            isFavorite(item.id) ? "fill-red-500 text-red-500" : "text-gray-500"
+                          }
                         />
                       </button>
                     )}
@@ -153,7 +163,9 @@ export function Menu() {
                   <div className="p-5 sm:p-6">
                     <h3 className="text-2xl text-secondary mb-2">{item.name}</h3>
                     <p className="text-muted-foreground text-sm mb-5 leading-relaxed">
-                      {item.description}
+                      {item.combo_options?.length === 2
+                        ? `Choose between ${item.combo_options[0].label.toLowerCase()} and ${item.combo_options[1].label.toLowerCase()}.`
+                        : item.description}
                     </p>
                     <button
                       onClick={() => setPickerItem(item)}

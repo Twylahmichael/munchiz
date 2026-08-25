@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, ChevronDown, Plus } from "lucide-react";
 import type { MenuItem } from "@/lib/database.types";
 import { useCart, type CartAddon } from "@/lib/cart";
-import { useMenuItemAddonsGrouped } from "@/hooks/use-addons";
+import { useMenuItemAddonsGrouped, useDrinksAddons } from "@/hooks/use-addons";
 import { QuantityStepper } from "./QuantityStepper";
 
 interface AddToCartModalProps {
@@ -18,9 +18,30 @@ const MAIN_QTY_MAX = 20;
 export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProps) {
   const { addItem } = useCart();
   const { data: groups, isLoading } = useMenuItemAddonsGrouped(item.id);
+  const { data: drinksList } = useDrinksAddons();
 
   // Main item quantity (how many of this menu item to add).
   const [mainQty, setMainQty] = useState(1);
+
+  // Combos with two selectable variants (e.g. "burger" OR "nuggets") — only
+  // one may be picked at a time. Defaults to the first option.
+  const comboOptions = item.combo_options ?? [];
+  const hasComboOptions = comboOptions.length === 2;
+  const [selectedOptionIdx, setSelectedOptionIdx] = useState(0);
+
+  // Drinks included free with the combo (0 = no picker). Each slot defaults
+  // to the first available drink so the selection is always valid.
+  const drinkCount = item.drink_choice_count ?? 0;
+  const [selectedDrinkIds, setSelectedDrinkIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (drinkCount <= 0 || drinksList.length === 0) return;
+    setSelectedDrinkIds((prev) => {
+      const next = prev.slice(0, drinkCount);
+      while (next.length < drinkCount) next.push(drinksList[0].id);
+      return next;
+    });
+  }, [drinkCount, drinksList]);
 
   // Track per-addon-id { checked, quantity }. quantity 0 (or checked=false)
   // means the add-on is not selected.
@@ -73,7 +94,33 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
   const lineTotal = item.price * mainQty + addonsSubtotal;
 
   function commit(nextAction: "continue" | "checkout") {
-    addItem(item, pickedAddons, mainQty);
+    // Combo option + included drink choices ride along as $0 add-ons so the
+    // kitchen, cart, and order summary all see them via the same pipeline
+    // that already renders add-ons — without changing the combo's fixed price.
+    const comboExtras: CartAddon[] = [];
+    if (hasComboOptions) {
+      const opt = comboOptions[selectedOptionIdx];
+      comboExtras.push({
+        id: `combo-option-${item.id}-${selectedOptionIdx}`,
+        name: `${opt.label}: ${opt.items.join(", ")}`,
+        price: 0,
+        quantity: 1,
+        category: "Combo Option",
+      });
+    }
+    selectedDrinkIds.forEach((drinkId, i) => {
+      const drink = drinksList.find((d) => d.id === drinkId);
+      if (!drink) return;
+      comboExtras.push({
+        id: `combo-drink-${item.id}-${i}-${drink.id}`,
+        name: drink.name,
+        price: 0,
+        quantity: 1,
+        category: "Drink Choice",
+      });
+    });
+
+    addItem(item, [...pickedAddons, ...comboExtras], mainQty);
     if (nextAction === "checkout") onCheckout();
     else onClose();
   }
@@ -111,7 +158,7 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
           </header>
 
           <div className="flex-1 overflow-y-auto p-5 space-y-3">
-            {item.description && (
+            {item.description && !hasComboOptions && (
               <p className="text-sm text-muted-foreground">{item.description}</p>
             )}
 
@@ -125,6 +172,84 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
                 ariaLabel={`${item.name} quantity`}
               />
             </div>
+
+            {hasComboOptions && (
+              <div>
+                <p className="text-sm font-semibold text-secondary mb-2">Choose your combo *</p>
+                <div
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                  role="radiogroup"
+                  aria-label="Combo option"
+                >
+                  {comboOptions.map((opt, i) => {
+                    const selected = selectedOptionIdx === i;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setSelectedOptionIdx(i)}
+                        className={`text-left rounded-2xl border-2 p-4 transition-all ${
+                          selected
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-border bg-background hover:border-primary/40"
+                        }`}
+                      >
+                        <p
+                          className={`text-xs font-bold uppercase tracking-wide mb-2 ${selected ? "text-primary" : "text-secondary"}`}
+                        >
+                          {opt.label}
+                        </p>
+                        <ul className="space-y-1">
+                          {opt.items.map((line, j) => (
+                            <li key={j} className="text-sm text-muted-foreground leading-snug">
+                              • {line}
+                            </li>
+                          ))}
+                        </ul>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {drinkCount > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-secondary">
+                  {drinkCount > 1 ? `Choose your ${drinkCount} drinks *` : "Choose your drink *"}
+                </p>
+                {drinksList.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No drinks configured yet.</p>
+                ) : (
+                  Array.from({ length: drinkCount }).map((_, i) => (
+                    <select
+                      key={i}
+                      value={selectedDrinkIds[i] || ""}
+                      onChange={(e) =>
+                        setSelectedDrinkIds((prev) => {
+                          const next = [...prev];
+                          next[i] = e.target.value;
+                          return next;
+                        })
+                      }
+                      aria-label={drinkCount > 1 ? `Drink ${i + 1}` : "Drink"}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      {drinksList.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  ))
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Included with this combo — no extra charge.
+                </p>
+              </div>
+            )}
 
             {isLoading ? (
               <div className="py-6 text-center text-muted-foreground text-sm">Loading options…</div>
@@ -206,11 +331,11 @@ export function AddToCartModal({ item, onClose, onCheckout }: AddToCartModalProp
                   </section>
                 );
               })
-            ) : (
+            ) : !hasComboOptions && drinkCount === 0 ? (
               <div className="rounded-2xl bg-background border border-border p-4 text-sm text-muted-foreground">
                 No extras configured for this item.
               </div>
-            )}
+            ) : null}
           </div>
 
           <footer className="border-t border-border p-4 space-y-3">
