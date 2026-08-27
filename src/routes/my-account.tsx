@@ -3,14 +3,11 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
+import { sanitize } from "@/lib/sanitize";
 
 export const Route = createFileRoute("/my-account")({
   component: MyAccount,
 });
-
-function sanitize(input: string): string {
-  return input.replace(/<[^>]*>/g, "").trim();
-}
 
 function MyAccount() {
   const { user, profile, loading: authLoading, signOut, refetchProfile } = useAuth();

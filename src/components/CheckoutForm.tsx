@@ -5,10 +5,7 @@ import { useCart, itemAddonsSubtotal } from "@/lib/cart";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import type { Zone, Branch, Promo } from "@/lib/database.types";
-
-function sanitize(input: string): string {
-  return input.replace(/<[^>]*>/g, "").trim();
-}
+import { sanitize } from "@/lib/sanitize";
 
 function isValidKenyanPhone(phone: string): boolean {
   const cleaned = phone.replace(/[\s-]/g, "");
