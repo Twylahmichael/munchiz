@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { sanitize } from "@/lib/sanitize";
+import { createRateLimiter } from "@/lib/rate-limit";
 
 export const Route = createFileRoute("/sign-up")({
   component: SignUp,
@@ -16,6 +18,7 @@ function SignUp() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const limiterRef = useRef(createRateLimiter({ maxAttempts: 5, windowMs: 60_000 }));
 
   if (user) {
     navigate({ to: "/" });
@@ -25,6 +28,11 @@ function SignUp() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!limiterRef.current.check()) {
+      setError(`Too many attempts. Try again in ${limiterRef.current.retryAfterSeconds}s.`);
+      return;
+    }
 
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
@@ -37,7 +45,7 @@ function SignUp() {
 
     setLoading(true);
     try {
-      await signUp(email, password, fullName);
+      await signUp(email, password, sanitize(fullName));
       setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign up failed");

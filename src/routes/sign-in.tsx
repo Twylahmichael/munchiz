@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { safeRedirect } from "@/lib/sanitize";
+import { createRateLimiter } from "@/lib/rate-limit";
 
 export const Route = createFileRoute("/sign-in")({
   component: SignIn,
@@ -15,6 +17,7 @@ function SignIn() {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [showReset, setShowReset] = useState(false);
+  const limiterRef = useRef(createRateLimiter({ maxAttempts: 5, windowMs: 60_000 }));
 
   if (user) {
     navigate({ to: "/" });
@@ -24,11 +27,17 @@ function SignIn() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!limiterRef.current.check()) {
+      setError(`Too many attempts. Try again in ${limiterRef.current.retryAfterSeconds}s.`);
+      return;
+    }
+
     setLoading(true);
     try {
       await signIn(email, password);
       const returnTo = new URLSearchParams(window.location.search).get("returnTo");
-      navigate({ to: returnTo || "/" });
+      navigate({ to: safeRedirect(returnTo) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -39,6 +48,12 @@ function SignIn() {
   async function handleReset(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!limiterRef.current.check()) {
+      setError(`Too many attempts. Try again in ${limiterRef.current.retryAfterSeconds}s.`);
+      return;
+    }
+
     setLoading(true);
     try {
       await resetPassword(email);

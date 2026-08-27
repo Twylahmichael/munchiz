@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { createRateLimiter } from "@/lib/rate-limit";
 
 export const Route = createFileRoute("/admin/login")({
   component: AdminLoginPage,
@@ -13,6 +14,7 @@ function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const limiterRef = useRef(createRateLimiter({ maxAttempts: 5, windowMs: 60_000 }));
 
   if (!loading && user) {
     navigate({ to: "/admin" });
@@ -22,6 +24,12 @@ function AdminLoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (!limiterRef.current.check()) {
+      setError(`Too many attempts. Try again in ${limiterRef.current.retryAfterSeconds}s.`);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await signIn(email, password);
