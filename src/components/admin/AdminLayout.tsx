@@ -1,20 +1,48 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, UtensilsCrossed, Tag, ShoppingCart, Settings, LogOut, ArrowLeft,
-  Users, Truck, Store, Zap, Package, BarChart3, DollarSign, Megaphone, Plus,
-  Award, Gift, Headphones, MapPin, Building2, Receipt, TrendingUp,
-  ChefHat, Calendar, Target, Wallet, CreditCard, FileText,
-  PanelLeftClose, PanelLeft, Bell, ClipboardList, UserPlus
+  LayoutDashboard,
+  UtensilsCrossed,
+  Tag,
+  ShoppingCart,
+  Settings,
+  LogOut,
+  ArrowLeft,
+  Users,
+  Truck,
+  Store,
+  Zap,
+  Package,
+  BarChart3,
+  DollarSign,
+  Megaphone,
+  Plus,
+  Award,
+  Gift,
+  Headphones,
+  MapPin,
+  Building2,
+  Receipt,
+  TrendingUp,
+  ChefHat,
+  Calendar,
+  Target,
+  Wallet,
+  CreditCard,
+  FileText,
+  PanelLeftClose,
+  PanelLeft,
+  Bell,
+  ClipboardList,
+  UserPlus,
+  MessageSquare,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 const SIDEBAR_SECTIONS = [
   {
     title: "Overview",
-    items: [
-      { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    ],
+    items: [{ to: "/admin", label: "Dashboard", icon: LayoutDashboard }],
   },
   {
     title: "Menu & Products",
@@ -33,6 +61,7 @@ const SIDEBAR_SECTIONS = [
       { to: "/admin/kitchen", label: "Kitchen", icon: ChefHat },
       { to: "/admin/drivers", label: "Drivers", icon: Truck },
       { to: "/admin/operations", label: "Operations", icon: ClipboardList },
+      { to: "/admin/sms-log", label: "SMS Log", icon: MessageSquare },
     ],
   },
   {
@@ -172,13 +201,18 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-[#1a1714] flex">
-      <aside className={`hidden md:flex ${collapsed ? "w-16" : "w-60"} bg-[#141210] text-white flex-col transition-all duration-200 border-r border-white/5`}>
+      <aside
+        className={`hidden md:flex ${collapsed ? "w-16" : "w-60"} bg-[#141210] text-white flex-col transition-all duration-200 border-r border-white/5`}
+      >
         {sidebar}
       </aside>
 
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileOpen(false)} />
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
           <aside className="fixed left-0 top-0 bottom-0 w-60 bg-[#141210] text-white z-50 md:hidden">
             {sidebar}
           </aside>
@@ -211,9 +245,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-4 sm:p-6 overflow-auto">{children}</main>
       </div>
     </div>
   );

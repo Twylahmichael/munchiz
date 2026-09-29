@@ -27,6 +27,24 @@ export type LeadSource = "walk_in" | "social_media" | "referral" | "website" | "
 export type LeadStatus = "new" | "contacted" | "converted" | "lost";
 export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
 export type TicketPriority = "low" | "medium" | "high" | "urgent";
+export type OrderSource = "web" | "sms" | "admin";
+export type SmsMessageDirection = "inbound" | "outbound";
+export type SmsMessageStatus =
+  | "received"
+  | "processed"
+  | "invalid"
+  | "sent"
+  | "delivered"
+  | "failed";
+export type SmsSessionState =
+  | "idle"
+  | "collecting_name"
+  | "collecting_order_type"
+  | "collecting_location"
+  | "collecting_branch"
+  | "confirming_order"
+  | "completed"
+  | "cancelled";
 
 export interface Database {
   public: {
@@ -208,6 +226,7 @@ export interface Database {
           status: OrderStatus;
           assigned_driver_id: string | null;
           whatsapp_sent: boolean;
+          order_source: OrderSource;
           created_at: string;
           updated_at: string;
         };
@@ -234,6 +253,7 @@ export interface Database {
           status?: OrderStatus;
           assigned_driver_id?: string | null;
           whatsapp_sent?: boolean;
+          order_source?: OrderSource;
           created_at?: string;
           updated_at?: string;
         };
@@ -259,6 +279,7 @@ export interface Database {
           status?: OrderStatus;
           assigned_driver_id?: string | null;
           whatsapp_sent?: boolean;
+          order_source?: OrderSource;
           updated_at?: string;
         };
       };
@@ -826,6 +847,75 @@ export interface Database {
           updated_at?: string;
         };
       };
+      sms_messages: {
+        Row: {
+          id: string;
+          provider: string;
+          provider_message_id: string | null;
+          direction: SmsMessageDirection;
+          phone: string;
+          message: string;
+          status: SmsMessageStatus;
+          related_order_id: string | null;
+          error_reason: string | null;
+          raw_payload: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          direction: SmsMessageDirection;
+          phone: string;
+          message: string;
+          status?: SmsMessageStatus;
+          related_order_id?: string | null;
+          error_reason?: string | null;
+          raw_payload?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          provider?: string;
+          provider_message_id?: string | null;
+          direction?: SmsMessageDirection;
+          phone?: string;
+          message?: string;
+          status?: SmsMessageStatus;
+          related_order_id?: string | null;
+          error_reason?: string | null;
+          raw_payload?: Json | null;
+        };
+      };
+      sms_sessions: {
+        Row: {
+          phone: string;
+          state: SmsSessionState;
+          cart: Json;
+          draft: Json;
+          last_message: string | null;
+          expires_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          phone: string;
+          state?: SmsSessionState;
+          cart?: Json;
+          draft?: Json;
+          last_message?: string | null;
+          expires_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          state?: SmsSessionState;
+          cart?: Json;
+          draft?: Json;
+          last_message?: string | null;
+          expires_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
@@ -853,3 +943,5 @@ export type Branch = Database["public"]["Tables"]["branches"]["Row"];
 export type AddonCategory = Database["public"]["Tables"]["addon_categories"]["Row"];
 export type Addon = Database["public"]["Tables"]["addons"]["Row"];
 export type MenuItemAddon = Database["public"]["Tables"]["menu_item_addons"]["Row"];
+export type SmsMessage = Database["public"]["Tables"]["sms_messages"]["Row"];
+export type SmsSession = Database["public"]["Tables"]["sms_sessions"]["Row"];
