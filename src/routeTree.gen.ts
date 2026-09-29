@@ -20,6 +20,7 @@ import { Route as AdminZonesRouteImport } from './routes/admin/zones'
 import { Route as AdminVendorsRouteImport } from './routes/admin/vendors'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminSupportRouteImport } from './routes/admin/support'
+import { Route as AdminSmsLogRouteImport } from './routes/admin/sms-log'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminSalesRouteImport } from './routes/admin/sales'
 import { Route as AdminRewardsRouteImport } from './routes/admin/rewards'
@@ -98,6 +99,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
 const AdminSupportRoute = AdminSupportRouteImport.update({
   id: '/admin/support',
   path: '/admin/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSmsLogRoute = AdminSmsLogRouteImport.update({
+  id: '/admin/sms-log',
+  path: '/admin/sms-log',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sms-log': typeof AdminSmsLogRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vendors': typeof AdminVendorsRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sms-log': typeof AdminSmsLogRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vendors': typeof AdminVendorsRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/admin/rewards': typeof AdminRewardsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sms-log': typeof AdminSmsLogRoute
   '/admin/support': typeof AdminSupportRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/vendors': typeof AdminVendorsRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/rewards'
     | '/admin/sales'
     | '/admin/settings'
+    | '/admin/sms-log'
     | '/admin/support'
     | '/admin/users'
     | '/admin/vendors'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
     | '/admin/rewards'
     | '/admin/sales'
     | '/admin/settings'
+    | '/admin/sms-log'
     | '/admin/support'
     | '/admin/users'
     | '/admin/vendors'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/admin/rewards'
     | '/admin/sales'
     | '/admin/settings'
+    | '/admin/sms-log'
     | '/admin/support'
     | '/admin/users'
     | '/admin/vendors'
@@ -478,6 +490,7 @@ export interface RootRouteChildren {
   AdminRewardsRoute: typeof AdminRewardsRoute
   AdminSalesRoute: typeof AdminSalesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSmsLogRoute: typeof AdminSmsLogRoute
   AdminSupportRoute: typeof AdminSupportRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/support'
       fullPath: '/admin/support'
       preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/sms-log': {
+      id: '/admin/sms-log'
+      path: '/admin/sms-log'
+      fullPath: '/admin/sms-log'
+      preLoaderRoute: typeof AdminSmsLogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/settings': {
@@ -766,6 +786,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRewardsRoute: AdminRewardsRoute,
   AdminSalesRoute: AdminSalesRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminSmsLogRoute: AdminSmsLogRoute,
   AdminSupportRoute: AdminSupportRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminVendorsRoute: AdminVendorsRoute,
